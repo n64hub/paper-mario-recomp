@@ -76,14 +76,6 @@ func = "nuGfxTaskAllEndWait"
 before_vram = 0x8005F2D8
 text = "{ void yield_self(uint8_t*); if (ctx->r2 != 0) yield_self(rdram); }"
 
-# A file the game's file menu offers before any save exists (fio_load_game in the decomp's src/fio.c) has no slot, -1,
-# and the game reads it anyway and finds its checksum wrong. On a console the Flash's address wraps at its 1 Mbit, so
-# page -1 is slot 7's; the runtime's Flash has no wrap and read far outside its save. fio_read_flash's slot (0-7, a
-# slot each 128 pages of 128 bytes) is wrapped as the chip does.
-[[patches.hook]]
-func = "fio_read_flash"
-text = "ctx->r4 &= 7;"
-
 # The game's anti-piracy (the decomp's src/*_obfuscated.c and load_obfuscation_shims.c): four functions are reached
 # only through pointers computed from words read off the cartridge's bus, which the runtime doesn't map. Each one calls
 # the function those pointers come to on a cartridge, as the decomp's shiftable build does (SHIFT).

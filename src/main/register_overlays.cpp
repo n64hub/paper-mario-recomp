@@ -20,17 +20,11 @@ void pm::register_overlays() {
     recomp::overlays::register_overlays(sections, overlays);
 }
 
-// The hooks at nuPiReadRom's and dma_copy's start (us.toml): the code sections lying wholly in the size bytes of ROM
-// at rom are now at ram. The game loads its overlays (maps, battles, effects, world and battle code) with dma_copy,
-// which reads in 0x2000-byte pieces through nuPiReadRom, and a few, such as a battle's partner, with nuPiReadRom alone.
-// librecomp's load_overlays expects a range that holds at least one section: for a piece inside a section its bounds
-// cross and it walks off the table, so a read is passed on only when a section lies in it.
+// The hooks where the game copies code out of ROM (us.toml): the code sections lying wholly in the size bytes of ROM at
+// rom are now at ram. The game loads its overlays (maps, battles, effects, world and battle code) with dma_copy, which
+// reads in 0x2000-byte pieces through nuPiReadRom, and a few, such as a battle's partner, with nuPiReadRom alone; a
+// piece inside a section maps nothing.
 extern "C" void pm_load_overlays(uint8_t* rdram, uint32_t rom, uint32_t ram, uint32_t size) {
     (void)rdram;
-    for (const SectionTableEntry& section : section_table) {
-        if (section.rom_addr >= rom && section.rom_addr + section.size <= rom + size && section.size > 0) {
-            load_overlays(rom, (int32_t)ram, size);
-            return;
-        }
-    }
+    load_overlays(rom, (int32_t)ram, size);
 }

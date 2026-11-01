@@ -12,6 +12,8 @@
 //                              timer running out does when the intro story played last; resolves true once it plays.
 //                              It plays its seventeen scenes, five of them battles, on its own, about 3 minutes
 //   demoScene()                the next scene the demo starts (gGameStatus.nextDemoScene, 0-17)
+//   intro(ms)                  from the title, the intro story the same way, which the boot's Start skips; about 2
+//                              minutes, then the title again
 //   warp(name, entry, ms, story)
 //                              from the world (a save played, or a new file's first map), goes to that map at that
 //                              entrance as an exit does (the decomp's src/evt/map_api.c goto_map, then
@@ -71,12 +73,16 @@
     return str(n64r(n64r(AREAS + area * 0x10 + 4) + map * 0x20));
   };
   window.clock = () => r16(FRAME_COUNTER);
-  window.demo = async (ms) => {
+  // The title's hold (startupState 2) ends when TitleScreen_TimeLeft reaches 0, in the demo or the intro story by
+  // PlayIntroNext (src/state_title_screen.c).
+  const fromTitle = async (intro, modes, ms) => {
     if (!(await until(() => window.mode() === 2 && r8(STARTUP_STATE) === 2, ms))) return false;
-    n64w(PLAY_INTRO_NEXT, 0);
+    n64w(PLAY_INTRO_NEXT, intro);
     w16(TITLE_TIME_LEFT, 1);
-    return until(() => window.mode() === 17 || window.mode() === 3, ms);
+    return until(() => modes.includes(window.mode()), ms);
   };
+  window.demo = (ms) => fromTitle(0, [3, 17], ms);
+  window.intro = (ms) => fromTitle(1, [16], ms);
   window.demoScene = () => r8(NEXT_DEMO_SCENE);
   window.warp = async (name, entry, ms, story) => {
     const ids = findMap(name);
