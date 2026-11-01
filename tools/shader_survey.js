@@ -18,7 +18,9 @@
 //                              from the world (a save played, or a new file's first map), goes to that map at that
 //                              entrance as an exit does (the decomp's src/evt/map_api.c goto_map, then
 //                              state_init_change_map): the map's area and number found by its name in gAreas, the
-//                              map change mode set in game mode slot 0, its fade from the map playing and the load.
+//                              standard fade (a new file's opening leaves the slow one of a game's start set, and a
+//                              map changed through that draws its background and none of its world), the map change
+//                              mode set in game mode slot 0, its fade from the map playing and the load.
 //                              story is the story's progress to set first (the save's GB_StoryProgress, a signed
 //                              byte, src's enums.h StoryProgress), so that the map's scripts set it up as at that
 //                              point in the game; resolves true once the map plays with the player's input back.
@@ -48,6 +50,7 @@
   const GAME_STATUS = 0x80074024, CUR_GAME_MODE = 0x800A08F0, MAIN_GAME_MODE = 0x80151700, AREAS = 0x800934F0;
   const TRANSITION_ALPHA = 0x800A0940, TRANSITION_FADE_RATE = 0x800A0942, TRANSITION_STATE = 0x800A0944;
   const PLAYER_DATA = 0x8010F290, CUR_PARTNER = PLAYER_DATA + 0x12, PARTNERS = PLAYER_DATA + 0x14, GOOMBARIO = 1;
+  const CURRENT_SCREEN_TRANSITION = 0x8014C6F0, TRANSITION_STANDARD = 0;
   const PLAY_INTRO_NEXT = 0x80077A34, TITLE_TIME_LEFT = 0x800A0988, STORY_PROGRESS = 0x800DACC0 + 0x10B0;
   // The map change mode's step and its UI (src/state_map_transitions.c).
   const STEP_CHANGE_MAP = 0x8003617C, DRAW_UI_CHANGE_MAP = 0x800363FC;
@@ -103,6 +106,7 @@
     w16(AREA_ID, ids[0]);
     w16(MAP_ID, ids[1]);
     w16(ENTRY_ID, entry);
+    n64w(CURRENT_SCREEN_TRANSITION, TRANSITION_STANDARD);
     // state_init_change_map.
     w16(TRANSITION_ALPHA, 0);
     w16(TRANSITION_FADE_RATE, 20);
