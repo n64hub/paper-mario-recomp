@@ -723,10 +723,10 @@ RECOMP_PATCH void gfx_draw_background(void) {
                     gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, 0, 0, 0, backgroundMinY - 1);
                 }
                 if (!opens) {
-                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_NONE, 0, backgroundMinY,
-                                     backgroundMinX - 1, backgroundMaxY - 1);
-                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_NONE, G_EX_ORIGIN_RIGHT, backgroundMaxX,
-                                     backgroundMinY, 0, backgroundMaxY - 1);
+                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_CENTER, 0, backgroundMinY,
+                                     backgroundMinX - 1 - SCREEN_WIDTH / 2, backgroundMaxY - 1);
+                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_CENTER, G_EX_ORIGIN_RIGHT,
+                                     backgroundMaxX - SCREEN_WIDTH / 2, backgroundMinY, 0, backgroundMaxY - 1);
                 }
                 if (backgroundMaxY < SCREEN_HEIGHT) {
                     gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, 0, backgroundMaxY, 0,
