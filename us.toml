@@ -1,0 +1,100 @@
+# N64Recomp's configuration for Paper Mario (USA), SHA-1 3837f44cda784b466c9a2d99df70d77c322b97a0: it reads the game's
+# code out of the ROM by the symbols in syms/ and writes RecompiledFuncs/ (tools/recompile.sh). The code is stored raw
+# in the ROM (only the game's assets are Yay0-compressed), so there is nothing to decompress first.
+[input]
+# The ROM header's entrypoint, the decomp's .main (src/entry_point.s).
+entrypoint = 0x80025C00
+# Paths are relative to this file.
+symbols_file_path = "syms/papermario.us.syms.toml"
+rom_file_path = "roms/papermario.us.z64"
+output_func_path = "RecompiledFuncs"
+use_absolute_symbols = true
+
+# libultra's TLB functions (osMapTLB, osUnmapTLB, osUnmapTLBAll) are among the ones N64Recomp has the runtime replace,
+# and here they do nothing (src/game/libultra.cpp): the effects (the decomp's src/effects.c) run at 0xE0xxxxxx, where
+# load_effect maps a page of RDRAM for each, and those addresses are backed by memory of their own
+# (src/game/recomp_api.cpp, pm::map_tlb_pages).
+
+[patches]
+# Labels inside libultra's exception handler (the decomp's src/os/exceptasm.s), which the runtime replaces: only the
+# handler jumps to them.
+ignored = [
+    "func_8006AA34",
+    "handle_CPU",
+    # The VI manager's thread (the decomp's src/os/vimgr.c): the runtime's osCreateViManager starts none.
+    "viMgrMain_00042010",
+]
+
+# Game functions named as the C library's or Windows' (winmm's PlaySound), which the generated C would declare a second
+# time or the linker would take for the system's: they become <name>_recomp.
+renamed = [
+    "atan2",
+    "PlaySound",
+    "printf",
+]
+
+# The game copies its code out of ROM three ways, and at each the runtime maps the functions in the stretch it copies at
+# the RAM it copies them to (pm_load_overlays): nuPiReadRom (the decomp's src/os/nusys/nupiread.c), dma_copy, which
+# reads in 0x2000-byte pieces through it, too short for most sections, so its whole stretch is mapped at its start, and
+# nuPiReadRomOverlay (the file menu and the pause screen), whose NUPiOverlaySegment starts with romStart, romEnd and
+# ramStart.
+[[patches.hook]]
+func = "nuPiReadRom"
+before_vram = 0x8005F490
+text = "{ void pm_load_overlays(uint8_t*, uint32_t, uint32_t, uint32_t); pm_load_overlays(rdram, ctx->r4, ctx->r5, ctx->r6); }"
+
+[[patches.hook]]
+func = "dma_copy"
+before_vram = 0x8002973C
+text = "{ void pm_load_overlays(uint8_t*, uint32_t, uint32_t, uint32_t); pm_load_overlays(rdram, ctx->r4, ctx->r6, ctx->r5 - ctx->r4); }"
+
+[[patches.hook]]
+func = "nuPiReadRomOverlay"
+before_vram = 0x800600E0
+text = "{ void pm_load_overlays(uint8_t*, uint32_t, uint32_t, uint32_t); pm_load_overlays(rdram, MEM_W(0, ctx->r4), MEM_W(8, ctx->r4), MEM_W(4, ctx->r4) - MEM_W(0, ctx->r4)); }"
+
+# The two threads NuSystem leaves spinning once the game is under way (the decomp's src/main.c and
+# src/os/nusys/nuboot.c): boot_main ends in while (true) {}, and boot_idle loops while nuIdleFunc is NULL, which the game
+# never sets. The game runs from then on in NuSystem's graphics thread, called on each retrace. Only one game thread
+# runs at a time here, so either spin would keep every other from running: each pass waits for the runtime's next
+# message (a retrace, a task done) and lets the threads it wakes run.
+[[patches.hook]]
+func = "boot_main"
+before_vram = 0x80026054
+text = "{ void yield_self(uint8_t*); yield_self(rdram); }"
+
+[[patches.hook]]
+func = "boot_idle"
+before_vram = 0x8005E98C
+text = "{ void yield_self(uint8_t*); yield_self(rdram); }"
+
+# NuSystem's wait for every graphics task to end (the decomp's src/os/nusys/nugfxtaskallendwait.c) spins on
+# nuGfxTaskSpool, which its task manager thread counts down as each task ends: while tasks are pending each pass lets
+# that thread run.
+[[patches.hook]]
+func = "nuGfxTaskAllEndWait"
+before_vram = 0x8005F2D8
+text = "{ void yield_self(uint8_t*); if (ctx->r2 != 0) yield_self(rdram); }"
+
+# The game's anti-piracy (the decomp's src/*_obfuscated.c and load_obfuscation_shims.c): four functions are reached
+# only through pointers computed from words read off the cartridge's bus, which the runtime doesn't map. Each one calls
+# the function those pointers come to on a cartridge, as the decomp's shiftable build does (SHIFT).
+[[patches.hook]]
+func = "create_audio_system_obfuscated"
+before_vram = 0x80200000
+text = "{ void create_audio_system(uint8_t*, recomp_context*); create_audio_system(rdram, ctx); return; }"
+
+[[patches.hook]]
+func = "load_engine_data_obfuscated"
+before_vram = 0x80200080
+text = "{ void load_engine_data(uint8_t*, recomp_context*); load_engine_data(rdram, ctx); return; }"
+
+[[patches.hook]]
+func = "general_heap_create_obfuscated"
+before_vram = 0x802AE000
+text = "{ void general_heap_create(uint8_t*, recomp_context*); general_heap_create(rdram, ctx); return; }"
+
+[[patches.hook]]
+func = "battle_heap_create_obfuscated"
+before_vram = 0x802AE000
+text = "{ void battle_heap_create(uint8_t*, recomp_context*); battle_heap_create(rdram, ctx); return; }"
