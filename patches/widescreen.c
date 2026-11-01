@@ -50,9 +50,12 @@ static s32 widescreen_margin(void) {
     if (aspect <= 4.0f / 3.0f + 0.001f) {
         return 0;
     }
-    // Rounded up, so that the background reaches past the window's edge rather than short of it, and no wider than
+    // Rounded up, and two pixels more, so that the background reaches past the window's edge rather than short of it:
+    // RT64 moves the side of a rectangle placed from the window's centre or a side left onto its grid of the game's
+    // pixels, and left again by the framebuffer's misalignment, up to two pixels in all (convertViewportRect's
+    // correctMisalignment), and rectangles to the window's right edge stopped a column short of it. No wider than
     // about 32:9, so that its copies fit their list (sWideBackgroundGfx).
-    f32 margin = (aspect * SCREEN_HEIGHT - SCREEN_WIDTH) * 0.5f + 1.0f;
+    f32 margin = (aspect * SCREEN_HEIGHT - SCREEN_WIDTH) * 0.5f + 3.0f;
     return margin > 280.0f ? 280 : (s32)margin;
 }
 
@@ -560,6 +563,15 @@ RECOMP_PATCH void gfx_draw_background(void) {
         case BACKGROUND_RENDER_STATE_FILTER_PAUSED:
             // Save the framebuffer into the depth buffer and run a filter on it based on the saved coverage values
             gfx_transfer_frame_to_depth(nuGfxCfb[0], nuGfxCfb[1], nuGfxZBuffer); // applies filters to the framebuffer
+            // @recomp The filter leaves the frame's two columns at either side as they were in the depth buffer, which
+            // at 4:3 is its cleared value there, the world drawn only inside the frame: a grey line around the paused
+            // picture. A camera that opens draws its depth to the sides too, which showed as coloured columns there.
+            if (widescreen_margin() > 0) {
+                for (i = 0; i < SCREEN_HEIGHT; i++) {
+                    u16* row = &nuGfxZBuffer[i * SCREEN_WIDTH];
+                    row[0] = row[1] = row[SCREEN_WIDTH - 2] = row[SCREEN_WIDTH - 1] = GPACK_ZDZ(G_MAXFBZ, 0);
+                }
+            }
             gPauseBackgroundFade = 0;
             gGameStatusPtr->backgroundFlags &= ~BACKGROUND_RENDER_STATE_MASK;
             gGameStatusPtr->backgroundFlags |= BACKGROUND_RENDER_STATE_SHOW_PAUSED;
