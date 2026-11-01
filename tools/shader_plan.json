@@ -14,13 +14,13 @@
   "twelve maps and five battles), and a new file is started from file select with A as a player does and its prologue",
   "played with A until its first battle. Then the pause menu, its tabs gone through with the stick, A and B, in Toad",
   "Town. Then a section an area: from a new file's first map (left out), warp() goes to each of a few of its maps as an",
-  "exit does, at that chapter's point in the story (GB_StoryProgress), and Mario walks each for 10 s of the game's time:",
-  "the Goomba Region, Toad Town, its sewers, the Koopa Region, the Koopa Bros. Fortress, Star Haven, Mt. Rugged, Dry",
-  "Dry Outpost and Desert, Dry Dry Ruins, Forever Forest and Boo's Mansion, Gusty Gulch and Tubba Blubba's Castle, Shy",
-  "Guy's Toy Box, the whale and Lavalava Island, Mt. Lavalava, Flower Fields, the Shiver Region, Crystal Palace,",
-  "Bowser's Castle, Peach's Castle and its grounds, and the minigames. Not recorded: battles other than the demo's and",
-  "the prologue's, the chapters' cutscenes and bosses, and the ending. Flags follow settings (filtering, HDR, MSAA,",
-  "upscaling), so a change to one of those defaults means recording again."
+  "exit does, at that chapter's point in the story (GB_StoryProgress) with Goombario along, and Mario walks each for",
+  "10 s of the game's time: the Goomba Region, Toad Town, its sewers, the Koopa Region, the Koopa Bros. Fortress, Star",
+  "Haven, Mt. Rugged, Dry Dry Outpost and Desert, Dry Dry Ruins, Forever Forest and Boo's Mansion, Gusty Gulch and",
+  "Tubba Blubba's Castle, Shy Guy's Toy Box, the whale and Lavalava Island, Mt. Lavalava, Flower Fields, the Shiver",
+  "Region, Crystal Palace, Bowser's Castle, Peach's Castle and its grounds, and the minigames. Not recorded: battles",
+  "other than the demo's and the prologue's, the chapters' cutscenes and bosses, and the ending. Flags follow settings",
+  "(filtering, HDR, MSAA, upscaling), so a change to one of those defaults means recording again."
  ],
  "load": [
   [
@@ -809,7 +809,7 @@
     ],
     [
      "need",
-     "warp('kmr_05', 0, 30000, -115)"
+     "warp('kmr_05', 1, 30000, -115)"
     ],
     [
      "clock",

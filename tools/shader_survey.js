@@ -21,7 +21,10 @@
 //                              map change mode set in game mode slot 0, its fade from the map playing and the load.
 //                              story is the story's progress to set first (the save's GB_StoryProgress, a signed
 //                              byte, src's enums.h StoryProgress), so that the map's scripts set it up as at that
-//                              point in the game; resolves true once the map plays with the player's input back
+//                              point in the game; resolves true once the map plays with the player's input back.
+//                              From Goombario joining on (-115) it gives Mario Goombario if he has no partner, as at
+//                              that point in the game: many maps' scripts make the partner speak, and with none they
+//                              read a null NPC, which crashes a console too
 //   battleOver(ms)             resolves true once no battle is playing (game mode neither 8 nor 9)
 //
 // A warp asked for while a map change, a battle or a cutscene's own map change is under way waits for the world.
@@ -44,6 +47,7 @@
   };
   const GAME_STATUS = 0x80074024, CUR_GAME_MODE = 0x800A08F0, MAIN_GAME_MODE = 0x80151700, AREAS = 0x800934F0;
   const TRANSITION_ALPHA = 0x800A0940, TRANSITION_FADE_RATE = 0x800A0942, TRANSITION_STATE = 0x800A0944;
+  const PLAYER_DATA = 0x8010F290, CUR_PARTNER = PLAYER_DATA + 0x12, PARTNERS = PLAYER_DATA + 0x14, GOOMBARIO = 1;
   const PLAY_INTRO_NEXT = 0x80077A34, TITLE_TIME_LEFT = 0x800A0988, STORY_PROGRESS = 0x800DACC0 + 0x10B0;
   // The map change mode's step and its UI (src/state_map_transitions.c).
   const STEP_CHANGE_MAP = 0x8003617C, DRAW_UI_CHANGE_MAP = 0x800363FC;
@@ -91,6 +95,11 @@
     // The world with the player's input on: game mode slot 0 stepping state_step_world.
     if (!(await until(() => window.mode() === 4, ms))) return false;
     if (story !== undefined) w8(STORY_PROGRESS, story);
+    // gPlayerData's partner, which the next map's load creates (partner_reset_data); PartnerData is 8 bytes, enabled first.
+    if (story !== undefined && story >= -115 && r8(CUR_PARTNER) === 0) {
+      w8(PARTNERS + GOOMBARIO * 8, 1);
+      w8(CUR_PARTNER, GOOMBARIO);
+    }
     w16(AREA_ID, ids[0]);
     w16(MAP_ID, ids[1]);
     w16(ENTRY_ID, entry);
