@@ -1,0 +1,53 @@
+{
+ "header": [
+  "The page's plan for N64Recomp-browser's tools/play_page.mjs, its regular play of 2-3 minutes: the launcher, Load ROM",
+  "on a new profile once the shader list Chrome builds behind the launcher is done (Firefox builds none there, and its",
+  "line saying so is the one waited for), Start Game, the boot and the opening to the title with Start (Enter), then",
+  "Start to the main menu, VS Mode with the stick (S) and A (Space), and A on Start to character select, as a player",
+  "does. tools/shader_survey.js starts the battle from there as character select and stage select do: a time battle",
+  "of four computer players (Mario, Link, Pikachu, Ness) on Peach's Castle with items, a minute of the game's time on",
+  "its clock (dSYTaskmanUpdateCount, 60 a second), behind a need that fails the run unless that battle is playing,",
+  "then the battle's clock run out and its results (after Sudden Death if it ties). The scene the game is in is",
+  "gSCManagerSceneData.scene_curr (0x800A4AD0, its high byte), the main menu's cursor sMNModeSelectOption (0x80132C88)",
+  "and VS Mode's sMNVSModeCursorIndex (0x80134948). tools/play_plan_extended.json goes on to more stages, for when a",
+  "longer play is needed."
+ ],
+ "page": "SmashBrosRecompiled.html",
+ "load": [["until", "RT64: all [0-9]+ prebuilt shaders built|once the game draws", 45000], ["wait", 5000]],
+ "setup": [["rom", 627, 364], ["wait", 3000]],
+ "start": [
+  ["click", 627, 364],
+  ["wait", 5000],
+  ["shot", "boot.png"],
+  ["pressUntil", "Enter", "Enter", 13, 150, 1500, "(n64r(0x800A4AD0) >>> 24) === 1", 90000],
+  ["wait", 3000],
+  ["shot", "title.png"],
+  ["pressUntil", "Enter", "Enter", 13, 150, 1500, "(n64r(0x800A4AD0) >>> 24) === 7", 30000],
+  ["wait", 2000],
+  ["shot", "main_menu.png"]
+ ],
+ "play": [
+  ["pressUntil", "KeyS", "s", 83, 150, 1000, "n64r(0x80132C88) === 1", 15000],
+  ["pressUntil", "Space", " ", 32, 150, 1500, "(n64r(0x800A4AD0) >>> 24) === 9", 15000],
+  ["wait", 1500],
+  ["shot", "vs_mode.png"],
+  ["need", "n64r(0x80134948) === 0"],
+  ["pressUntil", "Space", " ", 32, 150, 1500, "(n64r(0x800A4AD0) >>> 24) === 16", 15000],
+  ["wait", 3000],
+  ["shot", "character_select.png"],
+  ["evalFile", "shader_survey.js"],
+  ["need", "vs(0, [0, 5, 9, 11], 25000)"],
+  ["clock", "clock()", 60],
+  ["wait", 4000],
+  ["shot", "peachs_castle_start.png"],
+  ["wait", 28000],
+  ["shot", "peachs_castle.png"],
+  ["wait", 28000],
+  ["clock"],
+  ["need", "scene() === 22 && stage() === 0"],
+  ["eval", "timeUp()"],
+  ["need", "untilScene(24, 60000)"],
+  ["wait", 2000],
+  ["shot", "results.png"]
+ ]
+}

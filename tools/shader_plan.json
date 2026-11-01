@@ -1,0 +1,3697 @@
+{
+ "page": "SmashBrosRecompiled.html",
+ "header": [
+  "The RT64 shaders the web page builds: one shader description a line, other mode L and H, color combiner L and H,",
+  "flags, in hex. RT64 specializes each one's WGSL when the page is built and builds them with the game waiting: those",
+  "above the first \"section\" line before the game starts, and a stage's section when the stage first draws with its",
+  "shaders, so that nothing draws with the ubershader, which integrated graphics can't afford (N64Recomp-browser's",
+  "docs/porting.md, Prebuilt shader lists).",
+  "",
+  "Recorded by code, not by playing: bash tools/record_shaders.sh (its header says how) runs N64Recomp-browser's",
+  "tools/record_shaders.mjs with tools/shader_plan.json, which loads the page fresh for each section. Section 0 is the",
+  "launcher, the boot (the N64 logo, the opening and the title) and the main menu, reached with Start as a player does.",
+  "The menus' section goes on with the stick and A to VS Mode and its character select, then tools/shader_survey.js",
+  "starts each other menu as the menus do (stage select, the 1P menu and its three character selects, Training's,",
+  "Options, Data, Characters, VS Record and Sound Test). Then a section a VS stage, its battle started from character",
+  "select as stage select does (tools/shader_survey.js's vs()): four computer players, the twelve fighters three times",
+  "over the nine stages, 40 s of the game's time with items, then the clock run out and the results. Then a section for",
+  "each of the 1P Game's own stages, started from its stage as its character select does (spgame(): Metal Mario's Meta",
+  "Crystal, Race to the Finish, the Fighting Polygon Team's Duel Zone and Master Hand's Final Destination), its intro",
+  "and 40 s of its battle, port 1 standing still; and one for each fighter's Bonus Practice 1 (Break the Targets) and 2",
+  "(Board the Platforms) as its character select starts it (bonus()), 20 s, the fighter standing still (some fall off,",
+  "which ends the stage). Then one for each of the 1P Game's stages on the VS stages, as spgame() starts it, its intro",
+  "and 40 s (Link, the Yoshi Team, Fox, the Mario Bros., Pikachu, Giant Donkey Kong, the Kirby Team, Samus); a team",
+  "battle, two against two, run out to its results; a battle that ends tied, its Sudden Death and results; Training",
+  "Mode and its pause menu; the How to Play movie; a 1P stage lost three times to its Continue and on to the next; and",
+  "Master Hand beaten to Game Clear, the staff roll and Congratulations, and from there the challenger, Captain",
+  "Falcon's battle and his unlock message; and the opening movie, which the boot skips with Start, as the auto demo's",
+  "end starts it (go(28, 61)), to the title. Each but the last starts at VS Mode's character select, as the castle's",
+  "does. Not recorded: a target broken or a platform boarded, the game over, and the other challengers (Luigi, Ness,",
+  "Jigglypuff), whose battles draw as their VS stages do. Flags follow settings (filtering, HDR, MSAA, upscaling), so a",
+  "change to one of those defaults means recording again."
+ ],
+ "load": [
+  [
+   "until",
+   "Device Name|once the game draws",
+   45000
+  ],
+  [
+   "wait",
+   3000
+  ]
+ ],
+ "setup": [
+  [
+   "rom",
+   627,
+   364
+  ],
+  [
+   "wait",
+   3000
+  ]
+ ],
+ "start": [
+  [
+   "click",
+   627,
+   364
+  ],
+  [
+   "wait",
+   5000
+  ],
+  [
+   "pressUntil",
+   "Enter",
+   "Enter",
+   13,
+   150,
+   1500,
+   "(n64r(0x800A4AD0) >>> 24) === 1",
+   90000
+  ],
+  [
+   "wait",
+   3000
+  ],
+  [
+   "pressUntil",
+   "Enter",
+   "Enter",
+   13,
+   150,
+   1500,
+   "(n64r(0x800A4AD0) >>> 24) === 7",
+   30000
+  ],
+  [
+   "wait",
+   3000
+  ]
+ ],
+ "sections": [
+  {
+   "name": "menus",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "go(21, 16, 15000)"
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "need",
+     "go(8, 7, 15000)"
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "need",
+     "go(17, 8, 15000)"
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "need",
+     "go(19, 8, 15000)"
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "need",
+     "go(20, 8, 15000)"
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "need",
+     "go(18, 8, 15000)"
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "need",
+     "go(9, 7, 15000)"
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "need",
+     "go(57, 7, 15000)"
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "need",
+     "go(58, 7, 15000)"
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "need",
+     "go(26, 58, 15000)"
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "need",
+     "go(25, 58, 15000)"
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "need",
+     "go(59, 57, 15000)"
+    ],
+    [
+     "wait",
+     4000
+    ]
+   ]
+  },
+  {
+   "name": "castle",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "vs(0, [0, 1, 2, 3], 25000)"
+    ],
+    [
+     "clock",
+     "clock()",
+     60
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "clock"
+    ],
+    [
+     "need",
+     "scene() === 22 && stage() === 0"
+    ],
+    [
+     "eval",
+     "timeUp()"
+    ],
+    [
+     "wait",
+     10000
+    ]
+   ]
+  },
+  {
+   "name": "sector",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "vs(1, [4, 5, 6, 7], 25000)"
+    ],
+    [
+     "clock",
+     "clock()",
+     60
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "clock"
+    ],
+    [
+     "need",
+     "scene() === 22 && stage() === 1"
+    ],
+    [
+     "eval",
+     "timeUp()"
+    ],
+    [
+     "wait",
+     10000
+    ]
+   ]
+  },
+  {
+   "name": "jungle",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "vs(2, [8, 9, 10, 11], 25000)"
+    ],
+    [
+     "clock",
+     "clock()",
+     60
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "clock"
+    ],
+    [
+     "need",
+     "scene() === 22 && stage() === 2"
+    ],
+    [
+     "eval",
+     "timeUp()"
+    ],
+    [
+     "wait",
+     10000
+    ]
+   ]
+  },
+  {
+   "name": "zebes",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "vs(3, [0, 1, 2, 3], 25000)"
+    ],
+    [
+     "clock",
+     "clock()",
+     60
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "clock"
+    ],
+    [
+     "need",
+     "scene() === 22 && stage() === 3"
+    ],
+    [
+     "eval",
+     "timeUp()"
+    ],
+    [
+     "wait",
+     10000
+    ]
+   ]
+  },
+  {
+   "name": "hyrule",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "vs(4, [4, 5, 6, 7], 25000)"
+    ],
+    [
+     "clock",
+     "clock()",
+     60
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "clock"
+    ],
+    [
+     "need",
+     "scene() === 22 && stage() === 4"
+    ],
+    [
+     "eval",
+     "timeUp()"
+    ],
+    [
+     "wait",
+     10000
+    ]
+   ]
+  },
+  {
+   "name": "yoster",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "vs(5, [8, 9, 10, 11], 25000)"
+    ],
+    [
+     "clock",
+     "clock()",
+     60
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "clock"
+    ],
+    [
+     "need",
+     "scene() === 22 && stage() === 5"
+    ],
+    [
+     "eval",
+     "timeUp()"
+    ],
+    [
+     "wait",
+     10000
+    ]
+   ]
+  },
+  {
+   "name": "pupupu",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "vs(6, [0, 1, 2, 3], 25000)"
+    ],
+    [
+     "clock",
+     "clock()",
+     60
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "clock"
+    ],
+    [
+     "need",
+     "scene() === 22 && stage() === 6"
+    ],
+    [
+     "eval",
+     "timeUp()"
+    ],
+    [
+     "wait",
+     10000
+    ]
+   ]
+  },
+  {
+   "name": "yamabuki",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "vs(7, [4, 5, 6, 7], 25000)"
+    ],
+    [
+     "clock",
+     "clock()",
+     60
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "clock"
+    ],
+    [
+     "need",
+     "scene() === 22 && stage() === 7"
+    ],
+    [
+     "eval",
+     "timeUp()"
+    ],
+    [
+     "wait",
+     10000
+    ]
+   ]
+  },
+  {
+   "name": "inishie",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "vs(8, [8, 9, 10, 11], 25000)"
+    ],
+    [
+     "clock",
+     "clock()",
+     60
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "clock"
+    ],
+    [
+     "need",
+     "scene() === 22 && stage() === 8"
+    ],
+    [
+     "eval",
+     "timeUp()"
+    ],
+    [
+     "wait",
+     10000
+    ]
+   ]
+  },
+  {
+   "name": "metal",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(10, 0, 40000)"
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "need",
+     "stage() === 13"
+    ]
+   ]
+  },
+  {
+   "name": "race",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(11, 5, 40000)"
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "need",
+     "stage() === 15"
+    ]
+   ]
+  },
+  {
+   "name": "zako",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(12, 9, 40000)"
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "need",
+     "stage() === 14"
+    ]
+   ]
+  },
+  {
+   "name": "last",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(13, 11, 40000)"
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "need",
+     "stage() === 16"
+    ]
+   ]
+  },
+  {
+   "name": "targets-mario",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(1, 0, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 17 || scene() === 19"
+    ]
+   ]
+  },
+  {
+   "name": "targets-fox",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(1, 1, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 18 || scene() === 19"
+    ]
+   ]
+  },
+  {
+   "name": "targets-donkey",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(1, 2, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 19 || scene() === 19"
+    ]
+   ]
+  },
+  {
+   "name": "targets-samus",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(1, 3, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 20 || scene() === 19"
+    ]
+   ]
+  },
+  {
+   "name": "targets-luigi",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(1, 4, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 21 || scene() === 19"
+    ]
+   ]
+  },
+  {
+   "name": "targets-link",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(1, 5, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 22 || scene() === 19"
+    ]
+   ]
+  },
+  {
+   "name": "targets-yoshi",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(1, 6, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 23 || scene() === 19"
+    ]
+   ]
+  },
+  {
+   "name": "targets-captain",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(1, 7, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 24 || scene() === 19"
+    ]
+   ]
+  },
+  {
+   "name": "targets-kirby",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(1, 8, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 25 || scene() === 19"
+    ]
+   ]
+  },
+  {
+   "name": "targets-pikachu",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(1, 9, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 26 || scene() === 19"
+    ]
+   ]
+  },
+  {
+   "name": "targets-purin",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(1, 10, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 27 || scene() === 19"
+    ]
+   ]
+  },
+  {
+   "name": "targets-ness",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(1, 11, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 28 || scene() === 19"
+    ]
+   ]
+  },
+  {
+   "name": "platforms-mario",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(2, 0, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 29 || scene() === 20"
+    ]
+   ]
+  },
+  {
+   "name": "platforms-fox",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(2, 1, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 30 || scene() === 20"
+    ]
+   ]
+  },
+  {
+   "name": "platforms-donkey",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(2, 2, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 31 || scene() === 20"
+    ]
+   ]
+  },
+  {
+   "name": "platforms-samus",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(2, 3, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 32 || scene() === 20"
+    ]
+   ]
+  },
+  {
+   "name": "platforms-luigi",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(2, 4, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 33 || scene() === 20"
+    ]
+   ]
+  },
+  {
+   "name": "platforms-link",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(2, 5, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 34 || scene() === 20"
+    ]
+   ]
+  },
+  {
+   "name": "platforms-yoshi",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(2, 6, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 35 || scene() === 20"
+    ]
+   ]
+  },
+  {
+   "name": "platforms-captain",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(2, 7, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 36 || scene() === 20"
+    ]
+   ]
+  },
+  {
+   "name": "platforms-kirby",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(2, 8, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 37 || scene() === 20"
+    ]
+   ]
+  },
+  {
+   "name": "platforms-pikachu",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(2, 9, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 38 || scene() === 20"
+    ]
+   ]
+  },
+  {
+   "name": "platforms-purin",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(2, 10, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 39 || scene() === 20"
+    ]
+   ]
+  },
+  {
+   "name": "platforms-ness",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "bonus(2, 11, 25000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "need",
+     "scene() === 53 && stage() === 40 || scene() === 20"
+    ]
+   ]
+  },
+  {
+   "name": "sp-link",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(0, 0, 40000)"
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "need",
+     "stage() === 4"
+    ]
+   ]
+  },
+  {
+   "name": "sp-yoshi",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(1, 0, 40000)"
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "need",
+     "stage() === 12"
+    ]
+   ]
+  },
+  {
+   "name": "sp-fox",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(2, 0, 40000)"
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "need",
+     "stage() === 1"
+    ]
+   ]
+  },
+  {
+   "name": "sp-mario",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(4, 0, 40000)"
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "need",
+     "stage() === 0"
+    ]
+   ]
+  },
+  {
+   "name": "sp-pikachu",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(5, 0, 40000)"
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "need",
+     "stage() === 7"
+    ]
+   ]
+  },
+  {
+   "name": "sp-donkey",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(6, 0, 40000)"
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "need",
+     "stage() === 2"
+    ]
+   ]
+  },
+  {
+   "name": "sp-kirby",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(8, 0, 40000)"
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "need",
+     "stage() === 6"
+    ]
+   ]
+  },
+  {
+   "name": "sp-samus",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(9, 0, 40000)"
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "need",
+     "stage() === 3"
+    ]
+   ]
+  },
+  {
+   "name": "teams",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "vs(5, [0, 6, 8, 9], 25000, { teams: [0, 0, 1, 1] })"
+    ],
+    [
+     "clock",
+     "clock()",
+     60
+    ],
+    [
+     "wait",
+     40000
+    ],
+    [
+     "clock"
+    ],
+    [
+     "need",
+     "scene() === 22 && stage() === 5"
+    ],
+    [
+     "eval",
+     "timeUp()"
+    ],
+    [
+     "need",
+     "untilScene(24, 90000)"
+    ],
+    [
+     "wait",
+     6000
+    ]
+   ]
+  },
+  {
+   "name": "suddendeath",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "vs(3, [3, 7, 10, 11], 25000)"
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "eval",
+     "timeUp()"
+    ],
+    [
+     "wait",
+     15000
+    ],
+    [
+     "need",
+     "untilScene(24, 90000)"
+    ],
+    [
+     "wait",
+     6000
+    ]
+   ]
+  },
+  {
+   "name": "training",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "training(0, 0, 2, 30000)"
+    ],
+    [
+     "wait",
+     20000
+    ],
+    [
+     "hold",
+     "Enter",
+     "Enter",
+     13,
+     150
+    ],
+    [
+     "wait",
+     4000
+    ],
+    [
+     "hold",
+     "KeyS",
+     "s",
+     83,
+     150
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "hold",
+     "Enter",
+     "Enter",
+     13,
+     150
+    ],
+    [
+     "wait",
+     6000
+    ]
+   ]
+  },
+  {
+   "name": "explain",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "go(60, 58, 20000)"
+    ],
+    [
+     "wait",
+     75000
+    ]
+   ]
+  },
+  {
+   "name": "continue",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(2, 0, 40000)"
+    ],
+    [
+     "wait",
+     6000
+    ],
+    [
+     "hold",
+     "KeyA",
+     "a",
+     65,
+     3000
+    ],
+    [
+     "wait",
+     9000
+    ],
+    [
+     "hold",
+     "KeyA",
+     "a",
+     65,
+     3000
+    ],
+    [
+     "wait",
+     9000
+    ],
+    [
+     "hold",
+     "KeyA",
+     "a",
+     65,
+     3000
+    ],
+    [
+     "wait",
+     9000
+    ],
+    [
+     "wait",
+     6000
+    ],
+    [
+     "hold",
+     "Space",
+     " ",
+     32,
+     200
+    ],
+    [
+     "wait",
+     12000
+    ]
+   ]
+  },
+  {
+   "name": "ending",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(13, 0, 40000)"
+    ],
+    [
+     "wait",
+     8000
+    ],
+    [
+     "eval",
+     "n64w(0x800465D0, 1); true"
+    ],
+    [
+     "wait",
+     8000
+    ],
+    [
+     "hold",
+     "Enter",
+     "Enter",
+     13,
+     150
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "hold",
+     "Space",
+     " ",
+     32,
+     150
+    ],
+    [
+     "need",
+     "untilScene(55, 200000)"
+    ],
+    [
+     "wait",
+     5000
+    ]
+   ]
+  },
+  {
+   "name": "challenger",
+   "steps": [
+    [
+     "pressUntil",
+     "KeyS",
+     "s",
+     83,
+     150,
+     1000,
+     "n64r(0x80132C88) === 1",
+     15000
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 9",
+     15000
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "pressUntil",
+     "Space",
+     " ",
+     32,
+     150,
+     1500,
+     "(n64r(0x800A4AD0) >>> 24) === 16",
+     15000
+    ],
+    [
+     "wait",
+     2000
+    ],
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "spgame(13, 0, 40000)"
+    ],
+    [
+     "wait",
+     8000
+    ],
+    [
+     "eval",
+     "n64w(0x800465D0, 1); true"
+    ],
+    [
+     "wait",
+     8000
+    ],
+    [
+     "hold",
+     "Enter",
+     "Enter",
+     13,
+     150
+    ],
+    [
+     "wait",
+     1500
+    ],
+    [
+     "hold",
+     "Space",
+     " ",
+     32,
+     150
+    ],
+    [
+     "need",
+     "untilScene(55, 200000)"
+    ],
+    [
+     "wait",
+     5000
+    ],
+    [
+     "hold",
+     "Space",
+     " ",
+     32,
+     150
+    ],
+    [
+     "wait",
+     3000
+    ],
+    [
+     "hold",
+     "Enter",
+     "Enter",
+     13,
+     150
+    ],
+    [
+     "need",
+     "untilScene(13, 30000)"
+    ],
+    [
+     "wait",
+     45000
+    ],
+    [
+     "hold",
+     "Space",
+     " ",
+     32,
+     150
+    ],
+    [
+     "need",
+     "new Promise((r) => { const t0 = Date.now(); const f = () => stage() === 3 ? r(true) : Date.now() - t0 > 30000 ? r(false) : setTimeout(f, 250); f(); })"
+    ],
+    [
+     "wait",
+     30000
+    ],
+    [
+     "eval",
+     "n64w(0x800465D0, 1); true"
+    ],
+    [
+     "need",
+     "untilScene(12, 30000)"
+    ],
+    [
+     "wait",
+     8000
+    ],
+    [
+     "hold",
+     "Space",
+     " ",
+     32,
+     150
+    ],
+    [
+     "wait",
+     15000
+    ]
+   ]
+  },
+  {
+   "name": "opening",
+   "steps": [
+    [
+     "evalFile",
+     "shader_survey.js"
+    ],
+    [
+     "need",
+     "go(28, 61, 15000)"
+    ],
+    [
+     "need",
+     "untilScene(1, 150000)"
+    ],
+    [
+     "wait",
+     3000
+    ]
+   ]
+  }
+ ]
+}
