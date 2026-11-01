@@ -8,6 +8,13 @@
 // picture: beside it, the colour buffer kept whatever was drawn there last (the title's pillars, an earlier room). So a
 // camera whose view is the whole width opens to the window's sides, its background is drawn to them, and the borders
 // stay above and below. A camera with a smaller view (a picture in a corner) keeps the game's, as does a 4:3 picture.
+//
+// Two of the game's screen effects are drawn over the 4:3 picture too. A dark room's light (appendGfx_darkness_stencil)
+// is a 64x64 stencil the RDP draws into a texture, which RT64 widens and centres like any square viewport and so
+// breaks; wide, the stencil is worked out on the CPU from the same texture and quads, and drawn stretched to the
+// window's sides, its edges' darkness carried on. And the pause menu's blurred picture of the world
+// (gfx_transfer_frame_to_depth) leaves the depth buffer's two outer columns as they were, which with a camera that
+// opens hold the world's depth and show as coloured columns; wide, they are set to the cleared value.
 
 #include "patches.h"
 #include "common.h"

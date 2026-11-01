@@ -80,7 +80,8 @@ This repo is the game: its recompilation, the patches over it, the desktop build
   Expand, HUD Placement 16:9, Resolution Auto and Framerate Display. RT64 widens the 3D, but the game keeps the world
   inside its own frame, by its cameras' scissors and a background drawn only in the 4:3 picture: the patches open a
   camera whose view is the whole width to the window's sides and draw the background across, and a smaller view (the
-  intro story's, the demo's framed picture) keeps the game's frame. `patches/extended_gbi.c` turns on RT64's extended
+  intro story's, the demo's framed picture) keeps the game's frame. A dark room's light and the pause menu's blurred
+  world are widened there too. `patches/extended_gbi.c` turns on RT64's extended
   commands at the start of each of the game's display lists, since RT64 turns them off at each. Original (Aspect
   Ratio Original) is the console's 4:3.
 - **Testing.** `--boot` starts the game from the launcher's first frame once the ROM is stored, `--window <w>x<h>`
