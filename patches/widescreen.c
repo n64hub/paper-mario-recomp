@@ -56,6 +56,11 @@ static s32 widescreen_margin(void) {
     return margin > 280.0f ? 280 : (s32)margin;
 }
 
+// How far past its origin a rectangle placed from the window's left or right side reaches out, so that it ends at the
+// window's edge: RT64 places those origins at the edges of the picture HUD Placement gives the HUD (16:9 by default),
+// short of a wider window's, and clips a rectangle at its framebuffer.
+#define WIDE_REACH widescreen_margin()
+
 // Whether a camera's view spans the game's whole frame, so that it opens to the window's sides.
 static s32 widescreen_camera_opens(Camera* camera) {
     return widescreen_margin() > 0 && camera->viewportStartX <= FRAME_INSET_X &&
@@ -139,7 +144,8 @@ RECOMP_PATCH void render_frame(s32 isSecondPass) {
 
             // @recomp A view of the whole frame opens to the window's sides.
             if (widescreen_camera_opens(camera)) {
-                gEXSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, 0, uly, 0, lry);
+                gEXSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, -WIDE_REACH, uly,
+                              WIDE_REACH, lry);
             } else {
                 gDPSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, ulx, uly, lrx, lry);
             }
@@ -573,9 +579,10 @@ RECOMP_PATCH void gfx_draw_background(void) {
             gDPSetFillColor(gMainGfxPos++, PACK_FILL_COLOR(0, 0, 0, 1));
             // @recomp Black to the window's sides.
             if (widescreen_margin() > 0) {
-                gEXSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, 0, 0, 0,
-                              SCREEN_HEIGHT);
-                gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, 0, 0, 0, SCREEN_HEIGHT - 1);
+                gEXSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, -WIDE_REACH, 0,
+                              WIDE_REACH, SCREEN_HEIGHT);
+                gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, -WIDE_REACH, 0, WIDE_REACH,
+                                 SCREEN_HEIGHT - 1);
                 gDPSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
             } else {
                 gDPFillRectangle(gMainGfxPos++, 0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1);
@@ -617,8 +624,8 @@ RECOMP_PATCH void gfx_draw_background(void) {
             // @recomp Everything from here to the window's sides, when it reaches past the frame's.
             opens = widescreen_camera_opens(camera);
             if (widescreen_margin() > 0) {
-                gEXSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, 0, 0, 0,
-                              SCREEN_HEIGHT);
+                gEXSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, -WIDE_REACH, 0,
+                              WIDE_REACH, SCREEN_HEIGHT);
             }
 
             gDPSetDepthImage(gMainGfxPos++, OS_K0_TO_PHYSICAL(nuGfxZBuffer));
@@ -627,7 +634,8 @@ RECOMP_PATCH void gfx_draw_background(void) {
             gDPSetColorImage(gMainGfxPos++, G_IM_FMT_RGBA, G_IM_SIZ_16b, SCREEN_WIDTH, OS_K0_TO_PHYSICAL(nuGfxZBuffer));
             gDPSetFillColor(gMainGfxPos++, PACK_FILL_DEPTH(G_MAXFBZ, 0));
             if (widescreen_margin() > 0) {
-                gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, 0, 0, 0, SCREEN_HEIGHT - 1);
+                gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, -WIDE_REACH, 0, WIDE_REACH,
+                                 SCREEN_HEIGHT - 1);
             } else {
                 gDPFillRectangle(gMainGfxPos++, 0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1);
             }
@@ -691,8 +699,8 @@ RECOMP_PATCH void gfx_draw_background(void) {
 
             if (!(gGameStatusPtr->backgroundFlags & BACKGROUND_FLAG_TEXTURE)) {
                 if (opens) {
-                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, 0, backgroundMinY, 0,
-                                     backgroundMaxY - 1);
+                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, -WIDE_REACH, backgroundMinY,
+                                     WIDE_REACH, backgroundMaxY - 1);
                 } else {
                     gDPFillRectangle(gMainGfxPos++, backgroundMinX, backgroundMinY, backgroundMaxX - 1, backgroundMaxY - 1);
                 }
@@ -720,17 +728,18 @@ RECOMP_PATCH void gfx_draw_background(void) {
                 // @recomp The borders above and below to the window's sides, and beside only a view that keeps the
                 // game's frame, from the window's sides.
                 if (backgroundMinY > 0) {
-                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, 0, 0, 0, backgroundMinY - 1);
+                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, -WIDE_REACH, 0, WIDE_REACH,
+                                     backgroundMinY - 1);
                 }
                 if (!opens) {
-                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_CENTER, 0, backgroundMinY,
+                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_CENTER, -WIDE_REACH, backgroundMinY,
                                      backgroundMinX - 1 - SCREEN_WIDTH / 2, backgroundMaxY - 1);
                     gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_CENTER, G_EX_ORIGIN_RIGHT,
-                                     backgroundMaxX - SCREEN_WIDTH / 2, backgroundMinY, 0, backgroundMaxY - 1);
+                                     backgroundMaxX - SCREEN_WIDTH / 2, backgroundMinY, WIDE_REACH, backgroundMaxY - 1);
                 }
                 if (backgroundMaxY < SCREEN_HEIGHT) {
-                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, 0, backgroundMaxY, 0,
-                                     SCREEN_HEIGHT - 1);
+                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, -WIDE_REACH, backgroundMaxY,
+                                     WIDE_REACH, SCREEN_HEIGHT - 1);
                 }
                 gDPSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
                 break;
