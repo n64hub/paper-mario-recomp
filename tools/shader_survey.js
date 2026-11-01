@@ -1,149 +1,106 @@
 // Evaluated in the page by N64Recomp-browser's tools/record_shaders.mjs (tools/shader_plan.json) and play_page.mjs
-// (tools/play_plan.json, tools/play_plan_extended.json): starts a scene as the game's own menus do, by writing what the
-// scene reads into RDRAM and then the scene manager's next scene, with no patch. The addresses are the USA ROM's
-// (syms/papermario.us.datasyms.toml), the fields the decomp's (src/sc/sctypes.h). It offers
+// (tools/play_plan.json, tools/play_plan_extended.json): takes the game where a plan needs it as the game's own code
+// does, by writing what that code writes into RDRAM, with no patch. The addresses are the USA ROM's
+// (syms/papermario.us.datasyms.toml), the fields the decomp's (include/common_structs.h, src/game_modes.h). It offers
 //
-//   scene()                         the scene playing (gSCManagerSceneData.scene_curr: 1 the title, 7 the main menu,
-//                                   9 VS mode, 16 VS character select, 22 a VS battle, 24 its results, 52 the 1P Game,
-//                                   53 a Bonus stage)
-//   untilScene(scene, ms)           resolves true once that scene plays, false after ms
-//   stage()                         the stage of the battle playing (the battle state's gkind: 0-8 the VS stages, 13 Meta
-//                                   Crystal, 14 Duel Zone, 15 Race to the Finish, 16 Final Destination, 17 + fighter
-//                                   Break the Targets, 29 + fighter Board the Platforms)
-//   clock()                         the game's updates since the scene started (dSYTaskmanUpdateCount, 60 a second), for
-//                                   a plan's ["clock", "clock()", 60]
-//   vs(stage, fighters, ms, rules)  a time battle of four computer players (fighters: four of 0 Mario, 1 Fox, 2 Donkey
-//                                   Kong, 3 Samus, 4 Luigi, 5 Link, 6 Yoshi, 7 Captain Falcon, 8 Kirby, 9 Pikachu,
-//                                   10 Jigglypuff, 11 Ness) on that stage, items on, as character select and stage
-//                                   select start one; resolves true once it plays. rules: { minutes, teams, humans:
-//                                   the ports (0-3) played by their controllers in place of the computer }
-//   go(scene, prev, ms)             starts that scene as if from prev (a menu that reads where it came from), and
-//                                   resolves true once it plays: a menu, from another menu
-//   timeUp()                        ends the VS battle playing as its clock running out does: its results follow,
-//                                   after Sudden Death when it ends in a tie (the computer players end that too, in
-//                                   a few seconds to half a minute), so a plan waits for them with untilScene(24, ms)
-//   quit(ms)                        ends the scene playing as its own end does, and resolves true once another plays (a
-//                                   Bonus stage goes back to its character select)
-//   bonus(kind, fighter, ms)        Bonus Practice 1 (Break the Targets) or 2 (Board the Platforms) for that fighter,
-//                                   played by port 1, as its character select starts it; resolves true once it plays
-//   spgame(stage, fighter, ms)      the 1P Game from that stage of it (the decomp's nSC1PGameStage: 0 Link, 1 the
-//                                   Yoshi Team, 2 Fox, 4 the Mario Bros., 5 Pikachu, 6 Giant Donkey Kong, 8 the Kirby
-//                                   Team, 9 Samus, 10 Metal Mario, 11 Race to the Finish, 12 the Fighting Polygon
-//                                   Team, 13 Master Hand, 14-17 the challengers Luigi, Ness, Jigglypuff and Captain
-//                                   Falcon), port 1 playing that fighter, as its character select starts it; resolves
-//                                   true once its battle is on that stage. The 1P Game runs its stages, intros and
-//                                   results itself (sc1PManagerUpdateScene), with the scene manager's scene_curr left
-//                                   at what it starts after a game over (1)
-//   training(stage, man, com, ms)   Training Mode on that stage, port 1 playing man against the computer's com, as
-//                                   its character select and stage select start it (they set the fighters, without
-//                                   which it starts none); resolves true once it plays
-//   boot(), setBoot(n), errors()    the save's boot count, which the title adds one to at each power-on, and its
-//                                   anti-piracy penalty bits (gSCManagerBackupData's boot and error_flags, the
-//                                   decomp's LBBACKUP_ERROR_*): the checks us.toml answers run on entering VS Mode's
-//                                   menu once boot is over 21, the 1P menu over 42, a VS battle over 68 and a 1P Game
-//                                   stage over 92, and a check that fails sets its bit
-//   motor(port)                     the port's Rumble Pak as osMotorInit left it (sSYControllerMotorPfs[port].status:
-//                                   8, PFS_MOTOR_INITIALIZED, once the game has a motor there to start)
+//   mode()                     the game mode playing (CurGameMode: 2 the title, 4 the world, 5 a map change, 8 a
+//                              battle, 10 the pause menu, 14 file select, 16 the intro story, 17 the attract demo)
+//   map()                      the map playing, by name ("kmr_20"), or "" outside the world
+//   clock()                    the game's frames (gGameStatus.frameCounter, 30 a second as the game runs), for a plan's
+//                              ["clock", "clock()", 30]
+//   demo(ms)                   from the title, ends its wait at once and starts the attract demo, as the title's
+//                              timer running out does when the intro story played last; resolves true once it plays.
+//                              It plays its seventeen scenes, five of them battles, on its own, about 3 minutes
+//   demoScene()                the next scene the demo starts (gGameStatus.nextDemoScene, 0-17)
+//   warp(name, entry, ms, story)
+//                              from the world (a save played, or a new file's first map), goes to that map at that
+//                              entrance as an exit does (the decomp's src/evt/map_api.c goto_map, then
+//                              state_init_change_map): the map's area and number found by its name in gAreas, the
+//                              map change mode set in game mode slot 0, its fade from the map playing and the load.
+//                              story is the story's progress to set first (the save's GB_StoryProgress, a signed
+//                              byte, src's enums.h StoryProgress), so that the map's scripts set it up as at that
+//                              point in the game; resolves true once the map plays with the player's input back
+//   battleOver(ms)             resolves true once no battle is playing (game mode neither 8 nor 9)
 //
-// A scene is started from any other: the one playing ends at its next update once sSYTaskmanStatus says to load the
-// next (syTaskmanSetLoadScene), and the scene manager starts gSCManagerSceneData.scene_curr with its overlays. Ask from
-// a menu, not from a battle: a VS battle sets its results as the next scene as it ends.
+// A warp asked for while a map change, a battle or a cutscene's own map change is under way waits for the world.
 (() => {
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const r8 = (a) => (n64r(a & ~3) >>> (24 - 8 * (a & 3))) & 0xFF;
+  const r16 = (a) => (n64r(a & ~3) >>> (16 - 8 * (a & 2))) & 0xFFFF;
   const w8 = (a, v) => {
     const shift = 24 - 8 * (a & 3), word = n64r(a & ~3);
     n64w(a & ~3, (word & ~(0xFF << shift)) | ((v & 0xFF) << shift));
   };
-  const SCENE = 0x800A4AD0, PREV = 0x800A4AD1, GKIND = 0x800A4ADF, PLAYER = 0x800A4AE3, FKIND = 0x800A4AE4,
-    COSTUME = 0x800A4AE5, SPGAME_STAGE = 0x800A4AE7, BONUS_FKIND = 0x800A4B09, BONUS_COSTUME = 0x800A4B0A,
-    TRAINING_MAN = 0x800A4B0B;
-  const TRANSFER = 0x800A4D08, SPGAME_STATE = 0x800A4B18, BATTLE_STATE = 0x800A50E8;
-  const STATUS = 0x800465D0, UPDATES = 0x8003B6E4, BACKUP = 0x800A44E0, MOTOR_PFS = 0x800452C8;
+  const w16 = (a, v) => {
+    const shift = 16 - 8 * (a & 2), word = n64r(a & ~3);
+    n64w(a & ~3, (word & ~(0xFFFF << shift)) | ((v & 0xFFFF) << shift));
+  };
+  const str = (a) => {
+    let s = '';
+    for (let c; s.length < 32 && (c = r8(a + s.length)); ) s += String.fromCharCode(c);
+    return s;
+  };
+  const GAME_STATUS = 0x80074024, CUR_GAME_MODE = 0x800A08F0, MAIN_GAME_MODE = 0x80151700, AREAS = 0x800934F0;
+  const TRANSITION_ALPHA = 0x800A0940, TRANSITION_FADE_RATE = 0x800A0942, TRANSITION_STATE = 0x800A0944;
+  const PLAY_INTRO_NEXT = 0x80077A34, TITLE_TIME_LEFT = 0x800A0988, STORY_PROGRESS = 0x800DACC0 + 0x10B0;
+  // The map change mode's step and its UI (src/state_map_transitions.c).
+  const STEP_CHANGE_MAP = 0x8003617C, DRAW_UI_CHANGE_MAP = 0x800363FC;
+  // gGameStatus's fields.
+  const AREA_ID = GAME_STATUS + 0x86, PREV_AREA = GAME_STATUS + 0x88, DID_AREA_CHANGE = GAME_STATUS + 0x8A,
+    MAP_ID = GAME_STATUS + 0x8C, ENTRY_ID = GAME_STATUS + 0x8E, NEXT_DEMO_SCENE = GAME_STATUS + 0x72,
+    STARTUP_STATE = GAME_STATUS + 0xAC, FRAME_COUNTER = GAME_STATUS + 0x134;
   const until = async (test, ms) => {
     const end = Date.now() + ms;
     while (!test() && Date.now() < end) await sleep(100);
     return test();
   };
-  const start = (scene, prev) => {
-    w8(PREV, prev);
-    w8(SCENE, scene);
-    n64w(STATUS, 1);
-  };
-  window.scene = () => r8(SCENE);
-  window.untilScene = (scene, ms) => until(() => window.scene() === scene, ms);
-  window.stage = () => {
-    const state = n64r(BATTLE_STATE);
-    return (state >= 0x80000000 && state < 0x80800000) ? r8(state + 1) : -1;
-  };
-  window.clock = () => n64r(UPDATES) | 0;
-  // rules: { minutes, teams: [four of 0 red, 1 blue, 2 green], humans: [ports] } for another time limit than 3, a team
-  // battle, or ports their controllers play (HMN on character select: the port's own color and tag).
-  window.vs = async (stage, fighters, ms, rules = {}) => {
-    const t = TRANSFER;
-    w8(t + 0x02, rules.teams ? 1 : 0);  // is_team_battle
-    w8(t + 0x03, 1);            // game_rules: time
-    w8(t + 0x06, rules.minutes || 3);  // time_limit, minutes
-    const humans = rules.humans || [];
-    for (let i = 0; i < 4; i++) {
-      const p = t + 0x20 + 0x74 * i, man = humans.includes(i);
-      w8(p + 0x00, 9);          // CPU level
-      w8(p + 0x02, man ? 0 : 1);  // pkind: the port's controller, or the computer
-      w8(p + 0x03, fighters[i]);
-      w8(p + 0x04, rules.teams ? rules.teams[i] : 0);  // team
-      w8(p + 0x05, i);          // player
-      w8(p + 0x06, 0);          // costume
-      w8(p + 0x07, 0);          // shade
-      w8(p + 0x08, man ? i : 4);  // color: the port's, or a computer's
-      w8(p + 0x09, 1);          // is_single_stockicon, for a time battle
-      w8(p + 0x0A, man ? i : 4);  // tag: P1-P4, or CP
+  // gAreas: { mapCount, maps, "area_xxx", name } each, zero-terminated; a map's MapConfig is 0x20 bytes, its name first.
+  const findMap = (name) => {
+    for (let area = 0; n64r(AREAS + area * 0x10) !== 0; area++) {
+      const count = n64r(AREAS + area * 0x10), maps = n64r(AREAS + area * 0x10 + 4);
+      for (let map = 0; map < count; map++) {
+        if (str(n64r(maps + map * 0x20)) === name) return [area, map];
+      }
     }
-    w8(t + 0x04, humans.length);      // pl_count
-    w8(t + 0x05, 4 - humans.length);  // cp_count
-    w8(GKIND, stage);
-    start(22, 16);
-    return until(() => window.scene() === 22 && r8(TRANSFER + 1) === stage && n64r(BATTLE_STATE) === TRANSFER, ms);
+    return null;
   };
-  window.go = (scene, prev, ms) => { start(scene, prev); return window.untilScene(scene, ms); };
-  window.timeUp = () => { n64w(TRANSFER + 0x14, 2); return true; };
-  window.quit = (ms) => {
-    const before = window.scene();
-    n64w(STATUS, 1);
-    return until(() => window.scene() !== before, ms);
+  window.mode = () => (r16(CUR_GAME_MODE) << 16) >> 16;
+  window.map = () => {
+    if (window.mode() !== 4) return '';
+    const area = r16(AREA_ID), map = r16(MAP_ID);
+    return str(n64r(n64r(AREAS + area * 0x10 + 4) + map * 0x20));
   };
-  window.bonus = async (kind, fighter, ms) => {
-    w8(PLAYER, 0);
-    w8(BONUS_FKIND, fighter);
-    w8(BONUS_COSTUME, 0);
-    start(53, kind === 1 ? 19 : 20);
-    const stage = (kind === 1 ? 17 : 29) + fighter;
-    return until(() => window.scene() === 53 && window.stage() === stage, ms);
+  window.clock = () => r16(FRAME_COUNTER);
+  window.demo = async (ms) => {
+    if (!(await until(() => window.mode() === 2 && r8(STARTUP_STATE) === 2, ms))) return false;
+    n64w(PLAY_INTRO_NEXT, 0);
+    w16(TITLE_TIME_LEFT, 1);
+    return until(() => window.mode() === 17 || window.mode() === 3, ms);
   };
-  window.spgame = async (spgameStage, fighter, ms) => {
-    w8(PLAYER, 0);
-    w8(FKIND, fighter);
-    w8(COSTUME, 0);
-    w8(SPGAME_STAGE, spgameStage);
-    start(52, 17);
-    // Its stages' grounds (sc1pgame.c's table): the VS stages' 0-8, Small Yoshi's Island 12, Meta Crystal 13, Duel
-    // Zone 14, Race to the Finish 15, Final Destination 16.
-    const stage = { 0: 4, 1: 12, 2: 1, 4: 0, 5: 7, 6: 2, 8: 6, 9: 3, 10: 13, 11: 15, 12: 14, 13: 16, 14: 0, 15: 6,
-      16: 7, 17: 3 }[spgameStage];
-    return until(() => n64r(BATTLE_STATE) === SPGAME_STATE && window.stage() === stage, ms);
+  window.demoScene = () => r8(NEXT_DEMO_SCENE);
+  window.warp = async (name, entry, ms, story) => {
+    const ids = findMap(name);
+    if (!ids) throw new Error(`no map ${name}`);
+    const end = Date.now() + ms;
+    // The world with the player's input on: game mode slot 0 stepping state_step_world.
+    if (!(await until(() => window.mode() === 4, ms))) return false;
+    if (story !== undefined) w8(STORY_PROGRESS, story);
+    w16(AREA_ID, ids[0]);
+    w16(MAP_ID, ids[1]);
+    w16(ENTRY_ID, entry);
+    // state_init_change_map.
+    w16(TRANSITION_ALPHA, 0);
+    w16(TRANSITION_FADE_RATE, 20);
+    w16(TRANSITION_STATE, 0);
+    w16(DID_AREA_CHANGE, r16(PREV_AREA) !== ids[0] ? 1 : 0);
+    w16(PREV_AREA, ids[0]);
+    // set_game_mode_slot(0, &GameModeChangeMap): its step and UI, its first step not done yet. The step is written last,
+    // so the frame that reads it finds the rest set.
+    n64w(MAIN_GAME_MODE + 0x10, DRAW_UI_CHANGE_MAP);
+    w16(MAIN_GAME_MODE, 3);
+    w16(CUR_GAME_MODE, 5);
+    n64w(MAIN_GAME_MODE + 8, STEP_CHANGE_MAP);
+    return until(() => window.map() === name, Math.max(end - Date.now(), 0));
   };
-  window.training = async (stage, man, com, ms) => {
-    w8(PLAYER, 0);
-    w8(TRAINING_MAN, man);
-    w8(TRAINING_MAN + 1, 0);    // costume
-    w8(TRAINING_MAN + 2, com);
-    w8(TRAINING_MAN + 3, 1);    // costume
-    w8(GKIND, stage);
-    start(54, 21);
-    return until(() => window.scene() === 54 && window.stage() === stage, ms);
-  };
-  window.boot = () => r8(BACKUP + 0x5E3);
-  window.setBoot = (n) => { w8(BACKUP + 0x5E3, n); return window.boot() === n; };
-  window.errors = () => r8(BACKUP + 0x5E2);
-  window.motor = (port) => n64r(MOTOR_PFS + 0x68 * port);
-  return `scene ${window.scene()}`;
+  window.battleOver = (ms) => until(() => window.mode() !== 8 && window.mode() !== 9, ms);
 })()

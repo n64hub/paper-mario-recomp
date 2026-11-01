@@ -118,7 +118,7 @@ jobs:
         shell: bash
         run: |
           objs=$(ninja -C build -t targets all |
-            grep -oE '^CMakeFiles/SmashBrosRecompiled\.dir/[^:]+\.obj' | grep -v register_overlays)
+            grep -oE '^CMakeFiles/PaperMarioRecompiled\.dir/[^:]+\.obj' | grep -v register_overlays)
           [ -n "$objs" ] || { echo "no object targets found"; exit 1; }
           echo "$objs"
           ninja -C build $objs
@@ -228,7 +228,7 @@ jobs:
       - name: Compile the game's own sources
         run: |
           objs=$(ninja -C build -t targets all |
-            grep -oE '^CMakeFiles/SmashBrosRecompiled\.dir/[^:]+\.o' | grep -v register_overlays)
+            grep -oE '^CMakeFiles/PaperMarioRecompiled\.dir/[^:]+\.o' | grep -v register_overlays)
           [ -n "$objs" ] || { echo "no object targets found"; exit 1; }
           echo "$objs"
           ninja -C build $objs

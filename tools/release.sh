@@ -28,7 +28,7 @@ cd "$ROOT"
 version=$(sed -n 's/^const std::string version_string = "\(.*\)";$/\1/p' src/main/main.cpp)
 [ -n "$version" ] || { echo "no version_string in src/main/main.cpp" >&2; exit 1; }
 tag="v$version"
-name="SmashBrosRecompiled-$tag"
+name="PaperMarioRecompiled-$tag"
 commit=$(git rev-parse HEAD)
 mkdir -p out
 
@@ -45,12 +45,12 @@ windows)
     build=build/release-windows
     cmake -S . -B "$build" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl \
         -DPATCHES_C_COMPILER="$MIPS_CC" -DPATCHES_LD="$MIPS_LD" > "$build.log" 2>&1 || { tail -20 "$build.log"; exit 1; }
-    ninja -C "$build" SmashBrosRecompiled > "$build/build.log" 2>&1 ||
+    ninja -C "$build" PaperMarioRecompiled > "$build/build.log" 2>&1 ||
         { grep -E " error|FAILED|undefined" "$build/build.log" | head -20; exit 1; }
     stage="out/$name-windows-x64"
     rm -rf "$stage" "$stage.zip"
     mkdir -p "$stage"
-    cp "$build"/{SmashBrosRecompiled.exe,SDL2.dll,dxil.dll,dxcompiler.dll} recompcontrollerdb.txt LICENSE "$stage"/
+    cp "$build"/{PaperMarioRecompiled.exe,SDL2.dll,dxil.dll,dxcompiler.dll} recompcontrollerdb.txt LICENSE "$stage"/
     cp -r assets "$stage"/
     # CMake's own zip, so packing needs nothing the build doesn't.
     (cd out && cmake -E tar cf "$name-windows-x64.zip" --format=zip "$name-windows-x64")
@@ -71,14 +71,14 @@ linux)
         cmake -S . -B \$build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
             -DPATCHES_C_COMPILER=clang -DPATCHES_LD=ld.lld -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache > \$build.log 2>&1 || { tail -20 \$build.log; exit 1; }
-        ninja -C \$build SmashBrosRecompiled > \$build/build.log 2>&1 ||
+        ninja -C \$build PaperMarioRecompiled > \$build/build.log 2>&1 ||
             { grep -E ' error|FAILED|undefined' \$build/build.log | head -20; exit 1; }
         stage=out/$name-linux-x64
         rm -rf \$stage \$stage.tar.gz
         mkdir -p \$stage
-        cp \$build/SmashBrosRecompiled recompcontrollerdb.txt LICENSE \$stage/
+        cp \$build/PaperMarioRecompiled recompcontrollerdb.txt LICENSE \$stage/
         cp -L /usr/local/lib/libSDL2-2.0.so.0 /usr/lib/x86_64-linux-gnu/libatomic.so.1 \$stage/
-        patchelf --set-rpath '\$ORIGIN' \$stage/SmashBrosRecompiled
+        patchelf --set-rpath '\$ORIGIN' \$stage/PaperMarioRecompiled
         cp -r assets \$stage/
         tar -C out -czf \$stage.tar.gz $name-linux-x64"
     echo "$commit" > "out/$name-linux-x64.tar.gz.commit"
@@ -96,7 +96,7 @@ publish)
         [ -f "$f" ] || { echo "no $f: run tools/release.sh windows and linux first" >&2; exit 1; }
         [ "$(cat "$f.commit" 2> /dev/null)" = "$commit" ] || { echo "$f wasn't built from $commit" >&2; exit 1; }
     done
-    gh release create "$tag" "${files[@]}" --target "$commit" --title "Super Smash Bros.: Recompiled $tag" --notes-file "$notes"
+    gh release create "$tag" "${files[@]}" --target "$commit" --title "Paper Mario: Recompiled $tag" --notes-file "$notes"
     ;;
 *)
     echo "usage: tools/release.sh windows|linux|publish" >&2

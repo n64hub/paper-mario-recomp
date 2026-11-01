@@ -356,7 +356,10 @@ if (EMSCRIPTEN)
     n64recomp_browser_frontend_page(PaperMarioRecompiled)
     target_link_options(PaperMarioRecompiled PRIVATE
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/assets@/assets"
-        "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/recompcontrollerdb.txt@/recompcontrollerdb.txt")
+        "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/recompcontrollerdb.txt@/recompcontrollerdb.txt"
+        # The effects' TLB pages (src/game/recomp_api.cpp, pm::map_tlb_pages) lie about 1.5 GB past RDRAM: the heap
+        # grows to cover them.
+        -sALLOW_MEMORY_GROWTH=1 -sMAXIMUM_MEMORY=4GB)
 else()
     target_link_libraries(PaperMarioRecompiled PRIVATE nfd)
 endif()
