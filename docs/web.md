@@ -49,15 +49,18 @@ header has each function and address; the waits in the world are on the game's o
 `tools/play_plan.json` (about 3 minutes) boots, shoots the title, watches the attract demo's first scenes and its
 first battle, starts a new file from file select, and walks Toad Town, its pause menu, and Koopa Village.
 `tools/play_plan_extended.json` (about 5 minutes) goes on to a map of each later chapter's area. Play them with
-N64Recomp-browser's `tools/play_page.mjs` (its `docs/playing.md`).
+N64Recomp-browser's `tools/play_page.mjs` (its `docs/playing.md`). `tools/play_plan_maps.json` (about 30 minutes) is
+a release's check, not a regular play: the survey's `sweep()` warps to every map of every area in turn, a few seconds
+each, and a trap or a map that doesn't come fails it.
 
 ## The shader list
 
-`src/rt64_shaders.txt` holds about 1670 shaders in 25 sections: the boot's, then the intro story, the attract demo, a
+`src/rt64_shaders.txt` holds about 1800 shaders in 25 sections: the boot's, then the intro story, the attract demo, a
 new file's start, the pause menu, and one an area, each built the first time the area draws. It is recorded by code
 with `tools/shader_plan.json` (the list's header says what each section plays and how to record it again), and four
 lines at the top of `new_game`, which file select and a new file's first map draw in a window wider than 4:3, were
-added by hand from a play that missed them. A play that misses a shader prints it (`play_page.mjs` counts the
+added by hand from a play that missed them, as were the last lines of most areas' sections, from what
+`tools/play_plan_maps.json` missed in their maps. A play that misses a shader prints it (`play_page.mjs` counts the
 misses); add it to the section of the area it was missed in.
 
 ## How it plays

@@ -1,0 +1,63 @@
+{
+ "header": [
+  "A release check of every map, not a regular play: about 30 minutes, a play of its own for a release or a change to",
+  "the shader list. The launcher, Start Game and the boot as tools/play_plan.json, then Start to file select and A on",
+  "the first file to a new game's first map, and tools/shader_survey.js's sweep() goes through the areas one after",
+  "the other, each at a point in the story where its maps are open (GB_StoryProgress), and logs a line a map: one",
+  "that is not playing 20 s after its warp says FAIL, and a trap or a WebGPU error fails the run. Bowser's Castle's",
+  "kpa_16 and kpa_17 say FAIL: each is a passage whose script takes Mario on to the next map at once. Not swept: the",
+  "game over screen, the test maps and the ending (area_end): its parade fits its sprites into the sprite heap only with",
+  "no partner out, as the game's own ending leaves it (hos_10's ClearCurrentPartner), and a warp gives Mario Goombario,",
+  "with whom it traps in decode_yay0. A shader it misses goes into its area's section of src/rt64_shaders.txt."
+ ],
+ "page": "PaperMarioRecompiled.html",
+ "load": [
+  ["until", "RT64: all [0-9]+ prebuilt shaders built|once the game draws", 45000],
+  ["wait", 5000]
+ ],
+ "setup": [
+  ["rom", 627, 364],
+  ["wait", 3000]
+ ],
+ "start": [
+  ["click", 627, 364],
+  ["wait", 8000],
+  ["shot", "boot.png"],
+  ["evalFile", "shader_survey.js"],
+  ["pressUntil", "Enter", "Enter", 13, 150, 1500, "mode() === 2", 90000],
+  ["wait", 4000],
+  ["shot", "title.png"]
+ ],
+ "play": [
+  ["pressUntil", "Enter", "Enter", 13, 150, 1500, "mode() === 14", 30000],
+  ["wait", 3000],
+  ["pressUntil", "Space", " ", 32, 150, 1500, "mode() === 4", 60000],
+  ["wait", 3000],
+  ["need", "sweep('kmr', -115)"],
+  ["need", "sweep('mac', -102)"],
+  ["need", "sweep('tik', -102)"],
+  ["need", "sweep('kgr', 8)"],
+  ["need", "sweep('kkj', -102)"],
+  ["need", "sweep('hos', -102)"],
+  ["need", "sweep('osr', -102)"],
+  ["need", "sweep('mgm', -102)"],
+  ["need", "sweep('trd', -102)"],
+  ["need", "sweep('iwa', -72)"],
+  ["need", "sweep('sbk', -72)"],
+  ["need", "sweep('dro', -72)"],
+  ["need", "sweep('isk', -72)"],
+  ["need", "sweep('arn', -30)"],
+  ["need", "sweep('dgb', -30)"],
+  ["need", "sweep('mim', -51)"],
+  ["need", "sweep('obk', -51)"],
+  ["need", "sweep('omo', -12)"],
+  ["need", "sweep('jan', 8)"],
+  ["need", "sweep('kzn', 8)"],
+  ["need", "sweep('flo', 42)"],
+  ["need", "sweep('sam', 61)"],
+  ["need", "sweep('pra', 61)"],
+  ["need", "sweep('kpa', 94)"],
+  ["need", "sweep('nok', -102)"],
+  ["shot", "maps_end.png"]
+ ]
+}
