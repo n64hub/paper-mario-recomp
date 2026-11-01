@@ -1,9 +1,13 @@
-// The memory behind the game's TLB-mapped effects. (pm_load_overlays, which us.toml's hooks call, is in
+// The memory behind the game's TLB-mapped effects, and the natives the patches call (patches/syms.ld gives each a dummy
+// address that N64Recomp turns into a call by name). (pm_load_overlays, which us.toml's hooks call, is in
 // src/main/register_overlays.cpp, beside N64Recomp's section table.)
 
 #include "recomp.h"
 #include "librecomp/overlays.hpp"
 #include "librecomp/game.hpp"
+#include "librecomp/helpers.hpp"
+#include "ultramodern/config.hpp"
+#include "recompui/recompui.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -54,4 +58,18 @@ void pm::map_tlb_pages(uint8_t* rdram) {
     if (!ok) {
         fprintf(stderr, "could not back the effects' TLB pages at 0x%08X\n", effects_vram);
     }
+}
+
+// recomp_get_aspect_ratio(original): the picture's aspect ratio, the window's with Aspect Ratio Expand (never narrower
+// than original), else original (patches/widescreen.c).
+extern "C" void recomp_get_aspect_ratio(uint8_t* rdram, recomp_context* ctx) {
+    float original = _arg<0, float>(rdram, ctx);
+    int width, height;
+    recompui::get_window_size(width, height);
+    if (ultramodern::renderer::get_graphics_config().ar_option != ultramodern::renderer::AspectRatio::Expand ||
+        height <= 0) {
+        _return(ctx, original);
+        return;
+    }
+    _return(ctx, std::max(static_cast<float>(width) / height, original));
 }

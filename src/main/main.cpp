@@ -340,8 +340,8 @@ std::vector<recomp::GameEntry> supported_games = {
     },
 };
 
-// The game's threads (the decomp's src/sys/main.c, scheduler.c, audio.c, controller.c and debug.c) and libultra's
-// managers.
+// The game's threads: NuSystem's (the decomp's include/nu/nusys.h ids, src/os/nusys/), its audio manager's
+// (src/audio/core/system.c, which shares the main thread's id, 3), the crash screen's and libultra's managers.
 static std::string game_thread_name(const OSThread* t) {
     std::string name = "[Game] ";
 
@@ -366,24 +366,36 @@ static std::string game_thread_name(const OSThread* t) {
             name += "IDLE";
             break;
 
+        case 2:
+            name += "CRASH";
+            break;
+
         case 3:
-            name += "SCHEDULER";
+            name += t->priority == 10 ? "MAIN" : "AUDIO";
             break;
 
         case 4:
-            name += "AUDIO";
+            name += "GFX";
             break;
 
         case 5:
-            name += "GAME";
+            name += "GFXTASKMGR";
             break;
 
         case 6:
             name += "CONTROLLER";
             break;
 
-        case 8:
-            name += "DEBUG";
+        case 17:
+            name += "SC_GRAPHICS";
+            break;
+
+        case 18:
+            name += "SC_AUDIO";
+            break;
+
+        case 19:
+            name += "SC_HANDLER";
             break;
 
         default:
