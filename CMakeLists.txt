@@ -57,6 +57,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(RT64_STATIC TRUE)
 set(RT64_SDL_WINDOW_VULKAN TRUE)
+# No VI while RT64 is stalled in one list or screen update (N64Recomp-browser's docs/forks.md), on with Emscripten and
+# here on the desktop too: gfxRetrace_Callback steps the game whatever its lists do, so a long stall let it run on and
+# rewrite the list RT64 was still reading, and on Mesa's software Vulkan the picture stopped for good after 90 s.
+set(ULTRAMODERN_VIS_WAIT_FOR_RENDERER ON)
 add_compile_definitions(HLSL_CPU)
 
 if (WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
