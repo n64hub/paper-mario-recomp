@@ -71,6 +71,9 @@ does (`src/main/main.cpp` says why: Present Early showed the background alone be
 Widescreen is the desktop's (`patches/widescreen.c`): the world, battles, a dark room's light and the pause menu's
 blurred world reach the window's sides.
 
-In Firefox the page boots, plays the title, the demo and the first maps, but can stop drawing after an area's section
-is built in the middle of play, and a wide window has trapped in the game's allocator: that is the shared web
-support's to fix, not this game's.
+In Firefox the regular plan plays clean, no exception and no WebGPU error, at about 60 presents a second, in a
+1256x645 window and at 3840x2000 both. Firefox builds a section of the shader list in line with the device, and
+RT64's thread can wait 4-13 s for it in one list. The game steps its logic every other VI whatever its lists do, so
+it went on to the demo's next map in such a wait, and the page trapped or stopped drawing in 5 plays of 5. The web
+support sends no VI while the renderer is stalled like that (N64ModernRuntime's `ULTRAMODERN_VIS_WAIT_FOR_RENDERER`),
+and the game waits with it.
