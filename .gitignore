@@ -30,3 +30,4 @@ __pycache__/
 /mods/
 /*.log
 /*.bak
+build-*.log

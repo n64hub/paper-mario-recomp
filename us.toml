@@ -10,9 +10,10 @@ rom_file_path = "roms/papermario.us.z64"
 output_func_path = "RecompiledFuncs"
 use_absolute_symbols = true
 
-# libultra's TLB functions (osMapTLB, osUnmapTLB, osUnmapTLBAll) are N64Recomp's ignored functions, and the runtime's do
-# nothing: the effects (the decomp's src/effects.c) run at 0xE0xxxxxx, where load_effect maps a page of RDRAM for each,
-# and here those addresses are backed by memory of their own (src/game/recomp_api.cpp, pm_map_tlb_pages).
+# libultra's TLB functions (osMapTLB, osUnmapTLB, osUnmapTLBAll) are among the ones N64Recomp has the runtime replace,
+# and here they do nothing (src/game/libultra.cpp): the effects (the decomp's src/effects.c) run at 0xE0xxxxxx, where
+# load_effect maps a page of RDRAM for each, and those addresses are backed by memory of their own
+# (src/game/recomp_api.cpp, pm::map_tlb_pages).
 
 [patches]
 # Labels inside libultra's exception handler (the decomp's src/os/exceptasm.s), which the runtime replaces: only the
@@ -20,6 +21,16 @@ use_absolute_symbols = true
 ignored = [
     "func_8006AA34",
     "handle_CPU",
+    # The VI manager's thread (the decomp's src/os/vimgr.c): the runtime's osCreateViManager starts none.
+    "viMgrMain_00042010",
+]
+
+# Game functions named as the C library's or Windows' (winmm's PlaySound), which the generated C would declare a second
+# time or the linker would take for the system's: they become <name>_recomp.
+renamed = [
+    "atan2",
+    "PlaySound",
+    "printf",
 ]
 
 # Every code section the game copies out of ROM goes through nuPiReadRom (the decomp's src/os/nusys/nupiread.c): the

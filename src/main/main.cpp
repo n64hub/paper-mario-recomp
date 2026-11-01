@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <cinttypes>
 #include <filesystem>
+#include <chrono>
 
 #ifndef __EMSCRIPTEN__
 #include "nfd.h" // a browser has no native file dialogs; RecompFrontend asks the page instead
@@ -393,6 +394,49 @@ static std::string game_thread_name(const OSThread* t) {
     return name;
 }
 
+// --input <file> (development): scripted port 1 input for unattended runs. Each line is "<seconds> <buttons hex> [x y]",
+// seconds counted from the game's first input read, and the last line whose time has passed is held. Lines starting
+// with # are comments.
+struct ScriptedInput {
+    double at;
+    uint32_t buttons;
+    float x, y;
+};
+static std::vector<ScriptedInput> input_script;
+
+static void load_input_script(const char* path) {
+    FILE* f = fopen(path, "r");
+    if (f == nullptr) {
+        fprintf(stderr, "--input: can't open %s\n", path);
+        return;
+    }
+    char line[256];
+    while (fgets(line, sizeof(line), f) != nullptr) {
+        ScriptedInput in{};
+        if (line[0] != '#' && sscanf(line, "%lf %x %f %f", &in.at, &in.buttons, &in.x, &in.y) >= 2) {
+            input_script.push_back(in);
+        }
+    }
+    fclose(f);
+}
+
+static bool get_n64_input(int player_index, uint16_t* buttons_out, float* x_out, float* y_out) {
+    bool ret = recompinput::profiles::get_n64_input(player_index, buttons_out, x_out, y_out);
+    if (!input_script.empty() && player_index == 0) {
+        static const auto start = std::chrono::steady_clock::now();
+        double now = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+        for (const ScriptedInput& in : input_script) {
+            if (in.at <= now) {
+                *buttons_out = (uint16_t)in.buttons;
+                *x_out = in.x;
+                *y_out = in.y;
+                ret = true;
+            }
+        }
+    }
+    return ret;
+}
+
 // --boot (development): start the game on the launcher's first frame, as its Start Game option does, so a run
 // needs nobody at the window. Needs the ROM already stored.
 static bool autoboot = false;
@@ -437,6 +481,9 @@ int main(int argc, char** argv) {
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--boot") == 0) {
             autoboot = true;
+        }
+        else if (strcmp(argv[i], "--input") == 0 && i + 1 < argc) {
+            load_input_script(argv[++i]);
         }
         else if (strcmp(argv[i], "--window") == 0 && i + 1 < argc) {
             sscanf(argv[++i], "%dx%d", &window_width, &window_height);
@@ -542,7 +589,7 @@ int main(int argc, char** argv) {
 
     ultramodern::input::callbacks_t input_callbacks{
         .poll_input = recompinput::poll_inputs,
-        .get_input = recompinput::profiles::get_n64_input,
+        .get_input = get_n64_input,
         .set_rumble = recompinput::set_rumble,
         .get_connected_device_info = get_connected_device_info,
     };

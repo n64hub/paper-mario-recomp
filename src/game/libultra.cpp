@@ -19,3 +19,17 @@ extern "C" void __ll_rem_recomp(uint8_t* rdram, recomp_context* ctx) {
 // none here to watch.
 extern "C" void __osSetWatchLo_recomp(uint8_t* rdram, recomp_context* ctx) {
 }
+
+// The TLB: the effects' pages are backed by memory of their own at their addresses (src/game/recomp_api.cpp,
+// pm::map_tlb_pages), so there is nothing to map.
+extern "C" void osMapTLB_recomp(uint8_t* rdram, recomp_context* ctx) {
+}
+
+extern "C" void osUnmapTLB_recomp(uint8_t* rdram, recomp_context* ctx) {
+}
+
+// A write to the cartridge bus: the game's debug output (is_debug_init and is_debug_print in the decomp's
+// src/is_debug.c) writes to the IS-Viewer's registers, which a cartridge doesn't have.
+extern "C" void osEPiWriteIo_recomp(uint8_t* rdram, recomp_context* ctx) {
+    ctx->r2 = 0;
+}
