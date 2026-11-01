@@ -26,7 +26,9 @@
 //                              point in the game; resolves true once the map plays with the player's input back.
 //                              From Goombario joining on (-115) it gives Mario Goombario if he has no partner, as at
 //                              that point in the game: many maps' scripts make the partner speak, and with none they
-//                              read a null NPC, which crashes a console too
+//                              read a null NPC, which crashes a console too. It also sets the game's own debug switch
+//                              that lets no enemy touch Mario (gGameStatus.debugEnemyContact, DEBUG_CONTACT_CANT_TOUCH;
+//                              loading a file clears it), so that a plan's walk never starts a battle nothing would end
 //   battleOver(ms)             resolves true once no battle is playing (game mode neither 8 nor 9)
 //
 // A warp asked for while a map change, a battle or a cutscene's own map change is under way waits for the world.
@@ -57,7 +59,8 @@
   // gGameStatus's fields.
   const AREA_ID = GAME_STATUS + 0x86, PREV_AREA = GAME_STATUS + 0x88, DID_AREA_CHANGE = GAME_STATUS + 0x8A,
     MAP_ID = GAME_STATUS + 0x8C, ENTRY_ID = GAME_STATUS + 0x8E, NEXT_DEMO_SCENE = GAME_STATUS + 0x72,
-    STARTUP_STATE = GAME_STATUS + 0xAC, FRAME_COUNTER = GAME_STATUS + 0x134;
+    STARTUP_STATE = GAME_STATUS + 0xAC, FRAME_COUNTER = GAME_STATUS + 0x134, DEBUG_ENEMY_CONTACT = GAME_STATUS + 0x74;
+  const CONTACT_CANT_TOUCH = 1;
   const until = async (test, ms) => {
     const end = Date.now() + ms;
     while (!test() && Date.now() < end) await sleep(100);
@@ -103,6 +106,7 @@
       w8(PARTNERS + GOOMBARIO * 8, 1);
       w8(CUR_PARTNER, GOOMBARIO);
     }
+    w8(DEBUG_ENEMY_CONTACT, CONTACT_CANT_TOUCH);
     w16(AREA_ID, ids[0]);
     w16(MAP_ID, ids[1]);
     w16(ENTRY_ID, entry);
