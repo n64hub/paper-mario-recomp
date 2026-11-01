@@ -17,7 +17,9 @@
 # Tubba Blubba's Castle, Shy Guy's Toy Box, the whale and Lavalava Island, Mt. Lavalava, Flower Fields, the Shiver
 # Region, Crystal Palace, Bowser's Castle, Peach's Castle and its grounds, and the minigames. Not recorded: battles
 # other than the demo's and the prologue's, the chapters' cutscenes and bosses, and the ending. Flags follow settings
-# (filtering, HDR, MSAA, upscaling), so a change to one of those defaults means recording again.
+# (filtering, HDR, MSAA, upscaling), so a change to one of those defaults means recording again. The first four
+# of new_game, which the regular play missed at file select and a new file's first map in a wide window, were
+# added by hand.
 0f0a4000 00000cff fcffffff fffcf87c 04cb540b
 0f0a4300 00002c0f fcffffff fffdf6fb 0800000b
 00504340 00002c0f fcffffff fffdf6fb 0800000b
@@ -375,6 +377,10 @@ section demo
 0f0a7008 0000bcff fcffffff fffcf279 04cb540b
 0c192078 0018ac0f fc41ffff fffef838 08000004
 section new_game
+84104240 00100cff fc317fff 5ffef438 0485400b
+84104240 00100cff fcffffff fffd7438 04b5520b
+00504340 00008cff fcff97ff ff2dfeff 04cb540b
+00504340 00008cff fcffffff fffdf6fb 0800000b
 84104240 00100cff fc317fff 5ffef438 04b5520b
 84104240 00100cff fc317fff 5ffef438 04cd540b
 0f0a7008 00008cff fcffffff fffcf279 04cb540b
