@@ -33,9 +33,11 @@ renamed = [
     "printf",
 ]
 
-# Every code section the game copies out of ROM goes through nuPiReadRom (the decomp's src/os/nusys/nupiread.c): the
-# runtime maps the functions in the stretch it copies at the RAM it copies them to (pm_load_overlays). dma_copy reads in
-# 0x2000-byte chunks, too short for most sections, so its whole stretch is mapped at its start too.
+# The game copies its code out of ROM three ways, and at each the runtime maps the functions in the stretch it copies at
+# the RAM it copies them to (pm_load_overlays): nuPiReadRom (the decomp's src/os/nusys/nupiread.c), dma_copy, which
+# reads in 0x2000-byte pieces through it, too short for most sections, so its whole stretch is mapped at its start, and
+# nuPiReadRomOverlay (the file menu and the pause screen), whose NUPiOverlaySegment starts with romStart, romEnd and
+# ramStart.
 [[patches.hook]]
 func = "nuPiReadRom"
 before_vram = 0x8005F490
@@ -45,6 +47,42 @@ text = "{ void pm_load_overlays(uint8_t*, uint32_t, uint32_t, uint32_t); pm_load
 func = "dma_copy"
 before_vram = 0x8002973C
 text = "{ void pm_load_overlays(uint8_t*, uint32_t, uint32_t, uint32_t); pm_load_overlays(rdram, ctx->r4, ctx->r6, ctx->r5 - ctx->r4); }"
+
+[[patches.hook]]
+func = "nuPiReadRomOverlay"
+before_vram = 0x800600E0
+text = "{ void pm_load_overlays(uint8_t*, uint32_t, uint32_t, uint32_t); pm_load_overlays(rdram, MEM_W(0, ctx->r4), MEM_W(8, ctx->r4), MEM_W(4, ctx->r4) - MEM_W(0, ctx->r4)); }"
+
+# The two threads NuSystem leaves spinning once the game is under way (the decomp's src/main.c and
+# src/os/nusys/nuboot.c): boot_main ends in while (true) {}, and boot_idle loops while nuIdleFunc is NULL, which the game
+# never sets. The game runs from then on in NuSystem's graphics thread, called on each retrace. Only one game thread
+# runs at a time here, so either spin would keep every other from running: each pass waits for the runtime's next
+# message (a retrace, a task done) and lets the threads it wakes run.
+[[patches.hook]]
+func = "boot_main"
+before_vram = 0x80026054
+text = "{ void yield_self(uint8_t*); yield_self(rdram); }"
+
+[[patches.hook]]
+func = "boot_idle"
+before_vram = 0x8005E98C
+text = "{ void yield_self(uint8_t*); yield_self(rdram); }"
+
+# NuSystem's wait for every graphics task to end (the decomp's src/os/nusys/nugfxtaskallendwait.c) spins on
+# nuGfxTaskSpool, which its task manager thread counts down as each task ends: while tasks are pending each pass lets
+# that thread run.
+[[patches.hook]]
+func = "nuGfxTaskAllEndWait"
+before_vram = 0x8005F2D8
+text = "{ void yield_self(uint8_t*); if (ctx->r2 != 0) yield_self(rdram); }"
+
+# A file the game's file menu offers before any save exists (fio_load_game in the decomp's src/fio.c) has no slot, -1,
+# and the game reads it anyway and finds its checksum wrong. On a console the Flash's address wraps at its 1 Mbit, so
+# page -1 is slot 7's; the runtime's Flash has no wrap and read far outside its save. fio_read_flash's slot (0-7, a
+# slot each 128 pages of 128 bytes) is wrapped as the chip does.
+[[patches.hook]]
+func = "fio_read_flash"
+text = "ctx->r4 &= 7;"
 
 # The game's anti-piracy (the decomp's src/*_obfuscated.c and load_obfuscation_shims.c): four functions are reached
 # only through pointers computed from words read off the cartridge's bus, which the runtime doesn't map. Each one calls

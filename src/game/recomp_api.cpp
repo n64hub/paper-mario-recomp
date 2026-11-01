@@ -1,5 +1,5 @@
-// The natives us.toml's hooks call, each from the generated C of the game function it hooks, and the memory behind the
-// game's TLB-mapped effects.
+// The memory behind the game's TLB-mapped effects. (pm_load_overlays, which us.toml's hooks call, is in
+// src/main/register_overlays.cpp, beside N64Recomp's section table.)
 
 #include "recomp.h"
 #include "librecomp/overlays.hpp"
@@ -17,16 +17,6 @@
 #endif
 
 #include "pm.h"
-
-// The hooks at nuPiReadRom's and dma_copy's start (us.toml): the code sections lying wholly in the size bytes of ROM
-// at rom are now at ram. The game loads every overlay (its maps, battles, effects, world and battle code) with
-// dma_copy, which reads in 0x2000-byte pieces through nuPiReadRom, and a few with nuPiReadRom alone.
-extern "C" void pm_load_overlays(uint8_t* rdram, uint32_t rom, uint32_t ram, uint32_t size) {
-    (void)rdram;
-    if (size > 0) {
-        load_overlays(rom, (int32_t)ram, size);
-    }
-}
 
 // The game's effects run at 0xE0000000 and up behind the TLB (the decomp's src/effects.c: load_effect maps a 4 KB page
 // pair of gEffectDataBuffer at each effect's address before it copies the effect there, and clear_effect_data maps
