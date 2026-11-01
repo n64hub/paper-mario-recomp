@@ -1,108 +1,59 @@
-# N64Recomp's configuration for Super Smash Bros. (USA), SHA-1 e2929e10fccc0aa84e5776227e798abc07cedabf: it reads the
-# game's code out of the ROM by the symbols in syms/ and writes RecompiledFuncs/ (tools/recompile.sh). The code is
-# stored raw in the ROM (only the game's data files are VPK0-compressed), so there is nothing to decompress first.
+# N64Recomp's configuration for Paper Mario (USA), SHA-1 3837f44cda784b466c9a2d99df70d77c322b97a0: it reads the game's
+# code out of the ROM by the symbols in syms/ and writes RecompiledFuncs/ (tools/recompile.sh). The code is stored raw
+# in the ROM (only the game's assets are Yay0-compressed), so there is nothing to decompress first.
 [input]
-# The decomp's entrypoint (src/entry.s), which the ROM's header gives too.
-entrypoint = 0x80000400
+# The ROM header's entrypoint, the decomp's .main (src/entry_point.s).
+entrypoint = 0x80025C00
 # Paths are relative to this file.
-symbols_file_path = "syms/smashbrothers.us.syms.toml"
-rom_file_path = "roms/smashbrothers.us.z64"
+symbols_file_path = "syms/papermario.us.syms.toml"
+rom_file_path = "roms/papermario.us.z64"
 output_func_path = "RecompiledFuncs"
 use_absolute_symbols = true
 
-# The game's anti-piracy checks (the decomp's lbdef.h, LBBACKUP_ERROR_*), each answered as a console with the cartridge
-# answers it, so none of their penalties (random knockback, half the stick's range, Mario only in the 1P game,
-# Peach's Castle only in VS) is ever saved. Two read the RSP's memory at boot (sys/main.c), which the runtime doesn't
-# map: IMEM's first word is the CIC's 6103 and DMEM's -1. Two run code they load from a data file (sc1pgame.c past the
-# 92nd boot, scvsbattle.c past the 68th), which is in no overlay, so a recompilation can't run it: the call returns
-# TRUE, what it returns for the cartridge.
-[[patches.instruction]]
-func = "syMainSetImemStatus"
-vram = 0x80000484
-value = 0x240F17D7 # lw t7, 0x1000(t6) -> addiu t7, zero, 6103
+# libultra's TLB functions (osMapTLB, osUnmapTLB, osUnmapTLBAll) are N64Recomp's ignored functions, and the runtime's do
+# nothing: the effects (the decomp's src/effects.c) run at 0xE0xxxxxx, where load_effect maps a page of RDRAM for each,
+# and here those addresses are backed by memory of their own (src/game/recomp_api.cpp, pm_map_tlb_pages).
 
-[[patches.instruction]]
-func = "syMainSetDmemStatus"
-vram = 0x800004B4
-value = 0x240FFFFF # lw t7, 0(t6) -> addiu t7, zero, -1
+[patches]
+# Labels inside libultra's exception handler (the decomp's src/os/exceptasm.s), which the runtime replaces: only the
+# handler jumps to them.
+ignored = [
+    "func_8006AA34",
+    "handle_CPU",
+]
 
-[[patches.instruction]]
-func = "scVSBattleStartBattle"
-vram = 0x8018D2E0
-value = 0x24020001 # jalr s0 (llSYKseg1ValidateFunc) -> addiu v0, zero, 1
-
-[[patches.instruction]]
-func = "sc1PGameFuncStart"
-vram = 0x8018F870
-value = 0x24020001 # jalr s0 (llSYSignValidateFunc) -> addiu v0, zero, 1
-
-# The audio thread reads the AI's length register straight from the hardware (sys/audio.c's IO_READ(AI_LEN_REG), to
-# pick the next buffer's size), and the runtime maps no hardware registers: each read is a nop, and the register it
-# loads gets osAiGetLength's answer, the same register's value.
-[[patches.instruction]]
-func = "syAudioThreadMain"
-vram = 0x800202E4
-value = 0x00000000 # lw t5, 4(t4) -> nop
+# Every code section the game copies out of ROM goes through nuPiReadRom (the decomp's src/os/nusys/nupiread.c): the
+# runtime maps the functions in the stretch it copies at the RAM it copies them to (pm_load_overlays). dma_copy reads in
+# 0x2000-byte chunks, too short for most sections, so its whole stretch is mapped at its start too.
+[[patches.hook]]
+func = "nuPiReadRom"
+before_vram = 0x8005F490
+text = "{ void pm_load_overlays(uint8_t*, uint32_t, uint32_t, uint32_t); pm_load_overlays(rdram, ctx->r4, ctx->r5, ctx->r6); }"
 
 [[patches.hook]]
-func = "syAudioThreadMain"
-before_vram = 0x800202E8
-text = "{ void osAiGetLength_recomp(uint8_t*, recomp_context*); gpr v0 = ctx->r2; osAiGetLength_recomp(rdram, ctx); ctx->r13 = ctx->r2; ctx->r2 = v0; }"
+func = "dma_copy"
+before_vram = 0x8002973C
+text = "{ void pm_load_overlays(uint8_t*, uint32_t, uint32_t, uint32_t); pm_load_overlays(rdram, ctx->r4, ctx->r6, ctx->r5 - ctx->r4); }"
 
-[[patches.instruction]]
-func = "syAudioThreadMain"
-vram = 0x800209AC
-value = 0x00000000 # lw t4, 4(t8) -> nop
+# The game's anti-piracy (the decomp's src/*_obfuscated.c and load_obfuscation_shims.c): four functions are reached
+# only through pointers computed from words read off the cartridge's bus, which the runtime doesn't map. Each one calls
+# the function those pointers come to on a cartridge, as the decomp's shiftable build does (SHIFT).
+[[patches.hook]]
+func = "create_audio_system_obfuscated"
+before_vram = 0x80200000
+text = "{ void create_audio_system(uint8_t*, recomp_context*); create_audio_system(rdram, ctx); return; }"
 
 [[patches.hook]]
-func = "syAudioThreadMain"
-before_vram = 0x800209B0
-text = "{ void osAiGetLength_recomp(uint8_t*, recomp_context*); gpr v0 = ctx->r2; osAiGetLength_recomp(rdram, ctx); ctx->r12 = ctx->r2; ctx->r2 = v0; }"
-
-# The game waits for its other threads in loops that only read a variable those threads set (the decomp's
-# sc/scmanager.c waits on the audio thread at boot, the opening movie and title on the scheduler's tic count, the 1P
-# game and VS battles for the music to stop). A console's interrupts preempt such a loop, but the runtime runs one
-# game thread at a time and switches only when the running one calls into it, so the loop would spin forever: each
-# getter those loops call lets the other threads run when it is called again within 100 us, which only a loop does
-# (src/game/recomp_api.cpp).
-[[patches.hook]]
-func = "sySchedulerGetTicCount"
-before_vram = 0x8000092C
-text = "{ void ssb_spin_yield(uint8_t*, int); ssb_spin_yield(rdram, 0); }"
+func = "load_engine_data_obfuscated"
+before_vram = 0x80200080
+text = "{ void load_engine_data(uint8_t*, recomp_context*); load_engine_data(rdram, ctx); return; }"
 
 [[patches.hook]]
-func = "syAudioCheckBGMPlaying"
-before_vram = 0x80020D58
-text = "{ void ssb_spin_yield(uint8_t*, int); ssb_spin_yield(rdram, 1); }"
+func = "general_heap_create_obfuscated"
+before_vram = 0x802AE000
+text = "{ void general_heap_create(uint8_t*, recomp_context*); general_heap_create(rdram, ctx); return; }"
 
 [[patches.hook]]
-func = "syAudioGetSettingsUpdated"
-before_vram = 0x8002103C
-text = "{ void ssb_spin_yield(uint8_t*, int); ssb_spin_yield(rdram, 2); }"
-
-[[patches.hook]]
-func = "syAudioGetRestarting"
-before_vram = 0x80021048
-text = "{ void ssb_spin_yield(uint8_t*, int); ssb_spin_yield(rdram, 3); }"
-
-# Overlays: the runtime registers the code inside ROM 0x1000 plus 1 MB at startup, and any other code only when it is
-# told it was loaded. Every overlay the game loads comes through syDmaLoadOverlay (the decomp's src/sys/dma.c), which
-# takes an SYOverlay (its ROM start and end, then where it loads): each scene's code as the scene manager starts it
-# (src/sc/scmanager.c), and the code the scenes share at boot. A hook at its start registers what it is about to copy
-# (src/game/recomp_api.cpp).
-[[patches.hook]]
-func = "syDmaLoadOverlay"
-before_vram = 0x80002BE4
-text = "{ void ssb_load_overlay(uint8_t*, gpr); ssb_load_overlay(rdram, ctx->r4); }"
-
-# The character data screen's demo, which How to Play goes to when it ends (sc/sccommon/scexplain.c), shows and then
-# fights the scene data's two demo fighters, which only the title picks, when it is left to its attract cycle
-# (mn/mncommon/mntitle.c). Their default is nFTKindNull (sc/scmanager.c), so a player who presses Start at the title
-# and plays How to Play to its end from the Data menu reaches it with fighter 28: mnCharactersGetPage reads its
-# 12-entry table at 28, past its end, and the emblem it then makes reads out of memory (on the page, "memory access out
-# of bounds", and the game stops). A hook at mnCharactersInitVars' start gives it Mario and Fox in their place, two
-# fighters every save has, as the title would have picked two.
-[[patches.hook]]
-func = "mnCharactersInitVars"
-before_vram = 0x80133568
-text = "{ gpr scene = (gpr)(int32_t)0x800A4AD0; if (MEM_BU(0xD, scene) >= 12 || MEM_BU(0xE, scene) >= 12) { MEM_B(0xD, scene) = 0; MEM_B(0xE, scene) = 1; } }"
+func = "battle_heap_create_obfuscated"
+before_vram = 0x802AE000
+text = "{ void battle_heap_create(uint8_t*, recomp_context*); battle_heap_create(rdram, ctx); return; }"

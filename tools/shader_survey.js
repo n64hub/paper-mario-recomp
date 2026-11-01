@@ -1,7 +1,7 @@
 // Evaluated in the page by N64Recomp-browser's tools/record_shaders.mjs (tools/shader_plan.json) and play_page.mjs
 // (tools/play_plan.json, tools/play_plan_extended.json): starts a scene as the game's own menus do, by writing what the
 // scene reads into RDRAM and then the scene manager's next scene, with no patch. The addresses are the USA ROM's
-// (syms/smashbrothers.us.datasyms.toml), the fields the decomp's (src/sc/sctypes.h). It offers
+// (syms/papermario.us.datasyms.toml), the fields the decomp's (src/sc/sctypes.h). It offers
 //
 //   scene()                         the scene playing (gSCManagerSceneData.scene_curr: 1 the title, 7 the main menu,
 //                                   9 VS mode, 16 VS character select, 22 a VS battle, 24 its results, 52 the 1P Game,

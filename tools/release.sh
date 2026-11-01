@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds the desktop program's release, for Windows and for Linux, and publishes both as one GitHub release. CI has no
 # ROM (none is ever uploaded), so it can't recompile the game; a release is built where the ROM is, from
-# roms/smashbrothers.us.z64, and holds nothing from it: the player picks theirs with Load ROM.
+# roms/papermario.us.z64, and holds nothing from it: the player picks theirs with Load ROM.
 #
 #     tools/release.sh windows   # Git Bash on Windows, with the README's toolchain: out/<name>-windows-x64.zip
 #     tools/release.sh linux     # Linux with Docker: out/<name>-linux-x64.tar.gz
@@ -33,7 +33,7 @@ commit=$(git rev-parse HEAD)
 mkdir -p out
 
 setup() {
-    [ -f roms/smashbrothers.us.z64 ] || { echo "no roms/smashbrothers.us.z64 (README, Building)" >&2; exit 1; }
+    [ -f roms/papermario.us.z64 ] || { echo "no roms/papermario.us.z64 (README, Building)" >&2; exit 1; }
     git submodule update --init --recursive
 }
 
@@ -59,7 +59,7 @@ windows)
     ;;
 linux)
     setup
-    image=ssb-linux:$(sha256sum tools/docker/Dockerfile.linux | cut -c1-12)
+    image=pm-linux:$(sha256sum tools/docker/Dockerfile.linux | cut -c1-12)
     mkdir -p build/home build/ccache
     docker image inspect "$image" > /dev/null 2>&1 || docker build -t "$image" -f tools/docker/Dockerfile.linux tools/docker
     docker run --rm -u "$(id -u):$(id -g)" -v "$ROOT:/src" -w /src -e CCACHE_DIR=/src/build/ccache -e HOME=/src/build/home \

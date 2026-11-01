@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Generates RecompiledFuncs/ from roms/smashbrothers.us.z64: the game's code from the symbols in syms/ with N64Recomp
+# Generates RecompiledFuncs/ from roms/papermario.us.z64: the game's code from the symbols in syms/ with N64Recomp
 # (us.toml), and the audio microcode with RSPRecomp (n_aspMain.us.toml, RecompiledFuncs/n_aspMain_rsp.cpp). It is wiped and
 # written again, and the game's CMake configure needs it; a file that comes out the same as before keeps its old time,
 # so a build recompiles only the ones that changed. N64Recomp and RSPRecomp are the ones the runtime pins, built by

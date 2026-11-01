@@ -1,7 +1,7 @@
 # Checks and builds, on Windows and Linux; nothing is deployed or released.
 # The ROM is user-supplied and never in git or CI, so RecompiledFuncs/ (generated from it) doesn't exist here: CI builds
 # every library and every object file of the program except the one that includes that output, and stops short of
-# linking. The patches need no ROM: they are compiled against lib/ssb-decomp-re's headers and recompiled with syms/, on
+# linking. The patches need no ROM: they are compiled against lib/papermario's headers and recompiled with syms/, on
 # Linux.
 #
 # The submodules and the build directory are cached together, keyed on the runner image, the submodule commits and
@@ -62,7 +62,7 @@ jobs:
             build
           key: ${{ steps.key.outputs.key }}
           restore-keys: ${{ steps.key.outputs.prefix }}
-      # Not the decomp (lib/ssb-decomp-re): only patches/ includes it, which the Linux job builds. In parallel, retried,
+      # Not the decomp (lib/papermario): only patches/ includes it, which the Linux job builds. In parallel, retried,
       # and cleaned, as a cache restored by prefix holds the submodules as older patches left them.
       - name: Submodules
         if: steps.cache.outputs.cache-hit != 'true'
@@ -96,7 +96,7 @@ jobs:
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl `
             -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache `
-            -DSSB_PATCHES=OFF
+            -DPM_PATCHES=OFF
       # A first configure writes backslashed paths into the compile commands and every later one forward slashes, so a
       # build cached straight after a first configure would rebuild everything on the next run.
       - name: Configure again before a build that gets cached
@@ -166,7 +166,7 @@ jobs:
           for i in 1 2 3; do
             git -c protocol.version=2 submodule update --init --recursive --force --depth 1 --jobs 8 \
                 lib/N64ModernRuntime lib/N64Recomp-browser lib/RecompFrontend lib/rt64 &&
-              git -c protocol.version=2 submodule update --init --force --depth 1 lib/ssb-decomp-re &&
+              git -c protocol.version=2 submodule update --init --force --depth 1 lib/papermario &&
               git submodule foreach --recursive -q git clean -fdq &&
               git submodule foreach --recursive -q git reset -q --hard && exit 0
             echo "attempt $i failed"; sleep $((i * 15))

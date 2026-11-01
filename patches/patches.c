@@ -5,6 +5,6 @@
 
 #include "patches.h"
 
-RECOMP_EXPORT u32 ssb_patches_version(void) {
+RECOMP_EXPORT u32 pm_patches_version(void) {
     return 1;
 }

@@ -1,6 +1,6 @@
-# Super Smash Bros.: Recompiled: the recompiled game (RecompiledFuncs/, from tools/recompile.sh), the patches over it
+# Paper Mario: Recompiled: the recompiled game (RecompiledFuncs/, from tools/recompile.sh), the patches over it
 # (patches/, PatchesLib), and RecompFrontend's launcher and menus on RT64. The desktop program, and with Emscripten
-# (emcmake cmake; tools/build_web.sh) the page, SmashBrosRecompiled.html, through lib/N64Recomp-browser/frontend
+# (emcmake cmake; tools/build_web.sh) the page, PaperMarioRecompiled.html, through lib/N64Recomp-browser/frontend
 # (docs/web.md).
 cmake_minimum_required(VERSION 3.20)
 
@@ -8,7 +8,7 @@ if (APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum OS X deployment version")
 endif()
 
-project(SmashBrosRecompiled LANGUAGES C CXX)
+project(PaperMarioRecompiled LANGUAGES C CXX)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -69,7 +69,7 @@ endif()
 # tools/build_n64recomp.sh hasn't already. The desktop build takes them too: the code the patched N64Recomp writes uses
 # the patched recomp.h (RECOMP_TAIL_CALL), and the web support in them is behind __EMSCRIPTEN__.
 include(${CMAKE_SOURCE_DIR}/runtime-patches/apply.cmake)
-ssb_apply_patches()
+pm_apply_patches()
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/lib/rt64 ${CMAKE_BINARY_DIR}/rt64)
 
@@ -116,13 +116,13 @@ target_sources(RecompiledFuncs PRIVATE ${FUNC_C_SOURCES} ${FUNC_CXX_SOURCES})
 
 # PatchesLib: the patches (patches/), compiled for MIPS by patches/Makefile and recompiled by N64Recomp patches.toml
 # (the runtime's own N64Recomp, target N64RecompCLI). Needs a clang with a MIPS backend and ld.lld
-# (PATCHES_C_COMPILER, PATCHES_LD). SSB_PATCHES=OFF is for CI only,
-# which stops before linking: the game needs the patches to load its overlays.
-option(SSB_PATCHES "Build the patches library (the game needs it)" ON)
+# (PATCHES_C_COMPILER, PATCHES_LD). PM_PATCHES=OFF is for CI only, which stops before linking: the game needs the
+# patches for its enhancements.
+option(PM_PATCHES "Build the patches library (the game needs it)" ON)
 set(PATCHES_C_COMPILER clang CACHE STRING "clang with a MIPS backend, for patches/")
 set(PATCHES_LD ld.lld CACHE STRING "ld.lld, for patches/")
 
-if (SSB_PATCHES)
+if (PM_PATCHES)
     add_library(PatchesLib STATIC)
 
     target_compile_options(PatchesLib PRIVATE
@@ -153,12 +153,12 @@ if (SSB_PATCHES)
     # The recompiler runs where the build does: for the page that is tools/recompile.sh's native N64Recomp, not the
     # runtime's target, which Emscripten would build for the browser.
     if (EMSCRIPTEN)
-        set(SSB_N64RECOMP ${CMAKE_SOURCE_DIR}/build/n64recomp/N64Recomp)
+        set(PM_N64RECOMP ${CMAKE_SOURCE_DIR}/build/n64recomp/N64Recomp)
         # The patches call the game's functions: undeclared, a call links to a trap in WebAssembly.
         target_compile_options(PatchesLib PRIVATE -Werror=implicit-function-declaration
             "SHELL:-include ${CMAKE_SOURCE_DIR}/RecompiledFuncs/funcs.h")
     else()
-        set(SSB_N64RECOMP N64RecompCLI)
+        set(PM_N64RECOMP N64RecompCLI)
     endif()
 
     add_custom_command(OUTPUT
@@ -167,21 +167,21 @@ if (SSB_PATCHES)
             ${CMAKE_SOURCE_DIR}/RecompiledPatches/recomp_overlays.inl
             ${CMAKE_SOURCE_DIR}/RecompiledPatches/funcs.h
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/RecompiledPatches
-        COMMAND ${SSB_N64RECOMP} patches.toml
+        COMMAND ${PM_N64RECOMP} patches.toml
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         DEPENDS ${CMAKE_SOURCE_DIR}/patches/patches.elf ${CMAKE_SOURCE_DIR}/patches.toml
     )
 
     add_custom_command(OUTPUT ${CMAKE_SOURCE_DIR}/RecompiledPatches/patches_bin.c ${CMAKE_SOURCE_DIR}/RecompiledPatches/patches_bin.h
-        COMMAND file_to_c ${CMAKE_SOURCE_DIR}/patches/patches.bin ssb_patches_bin
+        COMMAND file_to_c ${CMAKE_SOURCE_DIR}/patches/patches.bin pm_patches_bin
             ${CMAKE_SOURCE_DIR}/RecompiledPatches/patches_bin.c ${CMAKE_SOURCE_DIR}/RecompiledPatches/patches_bin.h
         DEPENDS ${CMAKE_SOURCE_DIR}/patches/patches.bin
     )
 endif()
 
-add_executable(SmashBrosRecompiled)
+add_executable(PaperMarioRecompiled)
 
-target_sources(SmashBrosRecompiled PRIVATE
+target_sources(PaperMarioRecompiled PRIVATE
     ${CMAKE_SOURCE_DIR}/src/main/main.cpp
     ${CMAKE_SOURCE_DIR}/src/main/crash_trace.cpp
     ${CMAKE_SOURCE_DIR}/src/main/register_overlays.cpp
@@ -189,15 +189,15 @@ target_sources(SmashBrosRecompiled PRIVATE
     ${CMAKE_SOURCE_DIR}/src/game/libultra.cpp
     ${CMAKE_SOURCE_DIR}/src/game/recomp_api.cpp
 )
-if (SSB_PATCHES)
-    target_sources(SmashBrosRecompiled PRIVATE ${CMAKE_SOURCE_DIR}/src/main/register_patches.cpp)
+if (PM_PATCHES)
+    target_sources(PaperMarioRecompiled PRIVATE ${CMAKE_SOURCE_DIR}/src/main/register_patches.cpp)
     # register_patches.cpp includes the patches' section table, which the command above writes in the middle of a
     # build: without this edge an incremental build after a patch moved kept the old table.
     set_source_files_properties(${CMAKE_SOURCE_DIR}/src/main/register_patches.cpp PROPERTIES
         OBJECT_DEPENDS ${CMAKE_SOURCE_DIR}/RecompiledPatches/recomp_overlays.inl)
 endif()
 
-target_include_directories(SmashBrosRecompiled PRIVATE
+target_include_directories(PaperMarioRecompiled PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/lib/N64ModernRuntime/N64Recomp/include
     ${CMAKE_SOURCE_DIR}/lib/N64ModernRuntime/thirdparty
@@ -221,16 +221,16 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/icon_bytes.c ${CMAKE_CURRE
     DEPENDS ${CMAKE_SOURCE_DIR}/icons/512.png
 )
 
-target_sources(SmashBrosRecompiled PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/icon_bytes.c)
+target_sources(PaperMarioRecompiled PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/icon_bytes.c)
 
 if (CMAKE_SIZEOF_VOID_P EQUAL 8 AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64")
-    target_compile_options(SmashBrosRecompiled PRIVATE
+    target_compile_options(PaperMarioRecompiled PRIVATE
         -march=nehalem
         -fno-strict-aliasing
         -fms-extensions
     )
 else()
-    target_compile_options(SmashBrosRecompiled PRIVATE
+    target_compile_options(PaperMarioRecompiled PRIVATE
         -fno-strict-aliasing
         -fms-extensions
     )
@@ -238,7 +238,7 @@ endif()
 
 if (MSVC)
     # Disable identical code folding, since this breaks mod function patching as multiple functions can get merged into one.
-    target_link_options(SmashBrosRecompiled PRIVATE /OPT:NOICF)
+    target_link_options(PaperMarioRecompiled PRIVATE /OPT:NOICF)
 endif()
 
 if (WIN32)
@@ -255,24 +255,24 @@ if (WIN32)
         URL https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-devel-${SDL2_VERSION}-VC.zip
     )
     FetchContent_MakeAvailable(sdl2)
-    target_include_directories(SmashBrosRecompiled PRIVATE
+    target_include_directories(PaperMarioRecompiled PRIVATE
         ${sdl2_SOURCE_DIR}/include
     )
-    target_link_directories(SmashBrosRecompiled PRIVATE
+    target_link_directories(PaperMarioRecompiled PRIVATE
         ${sdl2_SOURCE_DIR}/lib/x64
     )
 
-    add_custom_command(TARGET SmashBrosRecompiled POST_BUILD
+    add_custom_command(TARGET PaperMarioRecompiled POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${sdl2_SOURCE_DIR}/lib/x64/SDL2.dll"
             "${CMAKE_SOURCE_DIR}/lib/rt64/src/contrib/dxc/bin/x64/dxil.dll"
             "${CMAKE_SOURCE_DIR}/lib/rt64/src/contrib/dxc/bin/x64/dxcompiler.dll"
-            $<TARGET_FILE_DIR:SmashBrosRecompiled>)
+            $<TARGET_FILE_DIR:PaperMarioRecompiled>)
 
     # A dev build (Debug, RelWithDebInfo) opens a console beside the window for its log; Release, which
     # tools/release.sh builds for players, is a windowed program only.
     set_target_properties(
-        SmashBrosRecompiled
+        PaperMarioRecompiled
         PROPERTIES
             LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE"
             LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup"
@@ -280,37 +280,37 @@ if (WIN32)
             LINK_FLAGS_MINSIZEREL "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup"
     )
 
-    target_sources(SmashBrosRecompiled PRIVATE ${CMAKE_SOURCE_DIR}/icons/app.rc)
-    target_link_libraries(SmashBrosRecompiled PRIVATE SDL2 Winmm.lib Dbghelp.lib)
+    target_sources(PaperMarioRecompiled PRIVATE ${CMAKE_SOURCE_DIR}/icons/app.rc)
+    target_link_libraries(PaperMarioRecompiled PRIVATE SDL2 Winmm.lib Dbghelp.lib)
     add_compile_definitions(NOMINMAX)
 endif()
 
 if (APPLE)
     find_package(SDL2 REQUIRED)
-    target_include_directories(SmashBrosRecompiled PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_include_directories(PaperMarioRecompiled PRIVATE ${SDL2_INCLUDE_DIRS})
 
     set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
     set(THREADS_PREFER_PTHREAD_FLAG TRUE)
     find_package(Threads REQUIRED)
 
-    target_link_libraries(SmashBrosRecompiled PRIVATE ${CMAKE_DL_LIBS} Threads::Threads SDL2::SDL2)
+    target_link_libraries(PaperMarioRecompiled PRIVATE ${CMAKE_DL_LIBS} Threads::Threads SDL2::SDL2)
 endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     find_package(SDL2 REQUIRED)
     add_compile_definitions("PLUME_SDL_VULKAN_ENABLED")
     add_compile_definitions("RT64_SDL_WINDOW_VULKAN")
-    target_include_directories(SmashBrosRecompiled PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_include_directories(PaperMarioRecompiled PRIVATE ${SDL2_INCLUDE_DIRS})
 
     find_package(Freetype REQUIRED)
     include_directories(${FREETYPE_LIBRARIES})
-    target_link_libraries(SmashBrosRecompiled PRIVATE ${FREETYPE_LIBRARIES} SDL2::SDL2)
+    target_link_libraries(PaperMarioRecompiled PRIVATE ${FREETYPE_LIBRARIES} SDL2::SDL2)
 
     set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
     set(THREADS_PREFER_PTHREAD_FLAG TRUE)
     find_package(Threads REQUIRED)
 
-    target_link_libraries(SmashBrosRecompiled PRIVATE "-latomic -static-libstdc++" ${CMAKE_DL_LIBS} Threads::Threads)
+    target_link_libraries(PaperMarioRecompiled PRIVATE "-latomic -static-libstdc++" ${CMAKE_DL_LIBS} Threads::Threads)
 endif()
 
 # dxc, for recompui's shaders
@@ -336,19 +336,12 @@ endif()
 
 set(RECOMP_FRONTEND_N64MODERNRUNTIME_PATH ${CMAKE_SOURCE_DIR}/lib/N64ModernRuntime)
 set(RECOMP_FRONTEND_RT64_PATH ${CMAKE_SOURCE_DIR}/lib/rt64)
-# The game turns RecompFrontend's single-player mode off, so that four people play four players (src/main/main.cpp), and
-# plays as single-player mode until players are assigned, as with Emscripten: without it a player alone needed to
-# assign their pad or keyboard first, and the keyboard played every pad's player.
-set(RECOMPINPUT_SINGLE_PLAYER_UNTIL_ASSIGNED ON CACHE BOOL "" FORCE)
-# And until then each pad plays a port of its own, in the order they were connected, the keyboard port 1
-# (RecompFrontend-web's option): four people with four pads play four players without assigning them.
-set(RECOMPINPUT_PADS_IN_ORDER ON CACHE BOOL "" FORCE)
 add_subdirectory(${CMAKE_SOURCE_DIR}/lib/RecompFrontend)
 
-if (SSB_PATCHES)
-    target_link_libraries(SmashBrosRecompiled PRIVATE PatchesLib)
+if (PM_PATCHES)
+    target_link_libraries(PaperMarioRecompiled PRIVATE PatchesLib)
 endif()
-target_link_libraries(SmashBrosRecompiled PRIVATE
+target_link_libraries(PaperMarioRecompiled PRIVATE
     RecompiledFuncs
     recompui
     recompinput
@@ -360,12 +353,12 @@ target_link_libraries(SmashBrosRecompiled PRIVATE
 if (EMSCRIPTEN)
     # The page (lib/N64Recomp-browser/frontend), with the menus' fonts and icons and the controller mappings in its .data
     # file. No ROM: the player picks theirs in the launcher, and it stays in the browser.
-    n64recomp_browser_frontend_page(SmashBrosRecompiled)
-    target_link_options(SmashBrosRecompiled PRIVATE
+    n64recomp_browser_frontend_page(PaperMarioRecompiled)
+    target_link_options(PaperMarioRecompiled PRIVATE
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/assets@/assets"
         "SHELL:--preload-file ${CMAKE_SOURCE_DIR}/recompcontrollerdb.txt@/recompcontrollerdb.txt")
 else()
-    target_link_libraries(SmashBrosRecompiled PRIVATE nfd)
+    target_link_libraries(PaperMarioRecompiled PRIVATE nfd)
 endif()
 
-set_property(TARGET SmashBrosRecompiled PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+set_property(TARGET PaperMarioRecompiled PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")

@@ -11,8 +11,8 @@ single_file_output = true
 use_absolute_symbols = true
 
 # The game's symbols, so that a patch resolves the functions and data it names.
-func_reference_syms_file = "syms/smashbrothers.us.syms.toml"
-data_reference_syms_files = [ "syms/smashbrothers.us.datasyms.toml" ]
+func_reference_syms_file = "syms/papermario.us.syms.toml"
+data_reference_syms_files = [ "syms/papermario.us.datasyms.toml" ]
 
 # Written by the recompiler rather than objcopy, so that it can patch the MIPS32 relocations.
 output_binary_path = "patches/patches.bin"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds the page into build/web/SmashBrosRecompiled.html (with its .js, .wasm, .data and coi_serviceworker.js) in the
 # image tools/docker/Dockerfile.web: tools/recompile.sh, then the game's CMake build with Emscripten, ccache in
-# build/ccache-web. It needs roms/smashbrothers.us.z64, as the desktop build does. Linux with Docker; run from anywhere in the
+# build/ccache-web. It needs roms/papermario.us.z64, as the desktop build does. Linux with Docker; run from anywhere in the
 # checkout:
 #
 #     tools/build_web.sh [cpus] [cmake arguments, e.g. -DN64RECOMP_BROWSER_FAST_LINK=ON for a quick try]
@@ -13,8 +13,8 @@ CPUS=${1:-$(nproc)}
 shift || true
 git -C "$ROOT" submodule update --init --recursive lib/N64ModernRuntime lib/rt64 lib/RecompFrontend lib/N64Recomp-browser
 # The decomp only for its headers, which patches/ includes.
-git -C "$ROOT" submodule update --init lib/ssb-decomp-re
-IMAGE=ssb-web:$(sha256sum "$ROOT/tools/docker/Dockerfile.web" | cut -c1-12)
+git -C "$ROOT" submodule update --init lib/papermario
+IMAGE=pm-web:$(sha256sum "$ROOT/tools/docker/Dockerfile.web" | cut -c1-12)
 mkdir -p "$ROOT/build/home" "$ROOT/build/ccache-web"
 docker image inspect "$IMAGE" >/dev/null 2>&1 || docker build -t "$IMAGE" -f "$ROOT/tools/docker/Dockerfile.web" "$ROOT/tools/docker"
 docker run --rm -u "$(id -u):$(id -g)" -v "$ROOT:/src" -w /src -e CCACHE_DIR=/src/build/ccache-web -e HOME=/src/build/home "$IMAGE" bash -euo pipefail -c "

@@ -1,4 +1,4 @@
-// Super Smash Bros.: Recompiled on RecompFrontend: its launcher (Load ROM, Start Game), settings menus, input and RT64
+// Paper Mario: Recompiled on RecompFrontend: its launcher (Load ROM, Start Game), settings menus, input and RT64
 // render context. The natives the patches call are recomp_api.cpp, the settings config.cpp.
 
 #include <cstdio>
@@ -44,7 +44,7 @@
 #include "recompinput/recompinput.h"
 #include "recompinput/profiles.h"
 
-#include "ssb.h"
+#include "pm.h"
 #include "librecomp/game.hpp"
 #include "librecomp/mods.hpp"
 #include "librecomp/helpers.hpp"
@@ -58,7 +58,7 @@
 
 #include "icon_bytes.h"
 
-const std::string version_string = "0.1.2";
+const std::string version_string = "0.1.0";
 
 template<typename... Ts>
 void exit_error(const char* str, Ts ...args) {
@@ -89,19 +89,17 @@ ultramodern::gfx_callbacks_t::gfx_data_t create_gfx() {
     return {};
 }
 
-// A port has a controller when its player is assigned, or until players are assigned when it is port 1 or a connected
-// pad's (RECOMPINPUT_PADS_IN_ORDER: the second pad connected plays port 2, and so on). The game reads which ports have
-// one for its menus: a VS battle's character select offers a hand on each. Each holds a Rumble Pak: the game starts a
-// port's motor only when its controller reports a pak (the decomp's src/sys/controller.c), and the runtime's
-// osMotorInit only when it is a Rumble Pak, so without one no pad ever rumbles. The strength is the General tab's.
+// Paper Mario is one player's: port 1 has a controller, with a Rumble Pak (the game starts its motor only when the
+// controller reports one, nuContRmbCheck in the decomp's src/os/nusys, and the runtime's osMotorInit only when it is a
+// Rumble Pak). Any pad or the keyboard plays it. The strength is the General tab's.
 ultramodern::input::connected_device_info_t get_connected_device_info(int controller_num) {
-    bool unassigned = recompinput::players::get_number_of_assigned_players() == 0;
-    if ((unassigned && (controller_num == 0 || (size_t)controller_num < recompinput::get_detected_controller_count())) ||
-        recompinput::players::get_player_is_assigned(controller_num)) {
-        return ultramodern::input::connected_device_info_t{
-            .connected_device = ultramodern::input::Device::Controller,
-            .connected_pak = ultramodern::input::Pak::RumblePak,
-        };
+    if (recompinput::players::is_single_player_mode() || recompinput::players::get_player_is_assigned(controller_num)) {
+        if (controller_num == 0) {
+            return ultramodern::input::connected_device_info_t{
+                .connected_device = ultramodern::input::Device::Controller,
+                .connected_pak = ultramodern::input::Pak::RumblePak,
+            };
+        }
     }
 
     return ultramodern::input::connected_device_info_t{
@@ -124,7 +122,7 @@ ultramodern::renderer::WindowHandle create_window(ultramodern::gfx_callbacks_t::
     flags |= SDL_WINDOW_VULKAN;
 #endif
 
-    window = SDL_CreateWindow(std::string{ ssb::program_name }.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    window = SDL_CreateWindow(std::string{ pm::program_name }.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         window_width, window_height, flags);
     if (window == nullptr) {
         exit_error("Failed to create window: %s\n", SDL_GetError());
@@ -319,21 +317,25 @@ RspUcodeFunc* get_rsp_microcode(const OSTask* task) {
 extern "C" void recomp_entrypoint(uint8_t* rdram, recomp_context* ctx);
 gpr get_entrypoint_address();
 
+static void on_init(uint8_t* rdram, recomp_context*) {
+    pm::map_tlb_pages(rdram);
+}
+
 std::vector<recomp::GameEntry> supported_games = {
     {
-        // XXH3 of Super Smash Bros. (USA), SHA-1 e2929e10fccc0aa84e5776227e798abc07cedabf. Its code is stored
-        // uncompressed.
-        .rom_hash = 0x38912ac86097bfecULL,
-        .internal_name = "SMASH BROTHERS",
-        .display_name = "Super Smash Bros.",
-        .game_id = u8"smashbrothers.n64.us.1.0",
-        .mod_game_id = "ssb",
-        // 256 Kbit of SRAM (the decomp's src/sys/dma.c, syDmaReadSram and syDmaWriteSram).
-        .save_type = recomp::SaveType::Sram,
+        // XXH3 of Paper Mario (USA), SHA-1 3837f44cda784b466c9a2d99df70d77c322b97a0.
+        .rom_hash = 0x1a478f060d5194cfULL,
+        .internal_name = "PAPER MARIO",
+        .display_name = "Paper Mario",
+        .game_id = u8"papermario.n64.us.1.0",
+        .mod_game_id = "pm64",
+        // 1 Mbit of Flash (the decomp's src/fio.c, through libultra's osFlash calls).
+        .save_type = recomp::SaveType::Flashram,
         .thumbnail_bytes = std::span<const char>(icon_bytes),
         .is_enabled = true,
         .entrypoint_address = get_entrypoint_address(),
         .entrypoint = recomp_entrypoint,
+        .on_init_callback = on_init,
     },
 };
 
@@ -483,8 +485,8 @@ int main(int argc, char** argv) {
     NFD_Init();
 #endif
 
-    recompui::programconfig::set_program_name(std::string{ ssb::program_name });
-    recompui::programconfig::set_program_id(std::u8string{ ssb::program_id });
+    recompui::programconfig::set_program_name(std::string{ pm::program_name });
+    recompui::programconfig::set_program_id(std::u8string{ pm::program_id });
 
     SDL_InitSubSystem(SDL_INIT_AUDIO);
     reset_audio(48000);
@@ -505,17 +507,13 @@ int main(int argc, char** argv) {
 
     recompui::register_ui_exports();
 
-    ssb::register_overlays();
-    ssb::register_patches();
+    pm::register_overlays();
+    pm::register_patches();
 
-    // Up to four players, each assigned a pad (or the keyboard) on the controls page's Assign players, which is then
-    // their own port (get_connected_device_info): four people play four players. Until players are assigned each pad
-    // plays a port of its own in the order the pads were connected and the keyboard plays port 1, with
-    // RECOMPINPUT_SINGLE_PLAYER_UNTIL_ASSIGNED and RECOMPINPUT_PADS_IN_ORDER (CMakeLists.txt).
-    recompinput::players::set_single_player_mode(false);
-    recompinput::players::set_player_count_range(1, 4);
+    // One player, on any pad or the keyboard.
+    recompinput::players::set_single_player_mode(true);
 
-    ssb::init_config();
+    pm::init_config();
 
     recompui::register_launcher_init_callback(on_launcher_init);
     recompui::register_launcher_update_callback(on_launcher_update);

@@ -18,6 +18,6 @@
 #define osEPiStartDma osEPiStartDma_recomp
 
 #include <common.h>
-#include <ssb_types.h>
+#include <pm_types.h>
 
 #endif

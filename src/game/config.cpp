@@ -6,9 +6,9 @@
 
 #include "recompui/config.h"
 #include "util/file.h"
-#include "ssb.h"
+#include "pm.h"
 
-void ssb::init_config() {
+void pm::init_config() {
     std::filesystem::path app_dir = recompui::file::get_app_folder_path();
     if (!app_dir.empty()) {
         std::filesystem::create_directories(app_dir);
