@@ -581,9 +581,12 @@ int main(int argc, char** argv) {
         .get_rsp_microcode = get_rsp_microcode,
     };
 
+    // Skip Buffering, not Present Early: the game draws each frame in two RSP tasks, the background (its clears and a
+    // fill over the whole framebuffer) and then the world, and Present Early shows a framebuffer as soon as a task fills
+    // it, so the background alone came on screen between the world's frames.
     ultramodern::renderer::callbacks_t renderer_callbacks{
         .create_render_context = [](uint8_t* rdram, ultramodern::renderer::WindowHandle window_handle, bool developer_mode) {
-            return recompui::renderer::create_render_context(rdram, window_handle, ultramodern::renderer::PresentationMode::PresentEarly, developer_mode);
+            return recompui::renderer::create_render_context(rdram, window_handle, ultramodern::renderer::PresentationMode::SkipBuffering, developer_mode);
         },
     };
 
