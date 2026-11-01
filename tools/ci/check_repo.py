@@ -21,9 +21,12 @@ ROM_DERIVED_DIRS = ("roms/", "extracted/", "RecompiledFuncs/", "rsp/")
 # The first word of an N64 ROM in .z64, .v64 and .n64 byte order.
 ROM_MAGICS = (b"\x80\x37\x12\x40", b"\x37\x80\x40\x12", b"\x40\x12\x37\x80")
 # RDRAM dumps are 4 or 8 MB and ROMs larger. The launcher's fonts (assets/, RecompFrontend's Chiaro at up to 6 MB) are
-# the only tracked files near that size, so they are left out of the size check by their extension.
+# the only tracked files near that size, so they are left out of the size check by their extension. So are the symbol
+# tables in syms/ (the data symbols' is about 28 MB): text generated from the decomp's ELF, each line a name and an
+# address, which the TOML check parses.
 MAX_FILE_SIZE = 4 * 1024 * 1024
 FONT_EXTENSIONS = {".otf", ".ttf"}
+SYMBOL_TABLES = "syms/"
 
 
 def tracked_files() -> list[str]:
@@ -44,7 +47,8 @@ def main() -> int:
         with path.open("rb") as f:
             if f.read(4) in ROM_MAGICS:
                 errors.append(f"{rel}: starts with an N64 ROM header")
-        if path.stat().st_size > MAX_FILE_SIZE and path.suffix.lower() not in FONT_EXTENSIONS:
+        if (path.stat().st_size > MAX_FILE_SIZE and path.suffix.lower() not in FONT_EXTENSIONS
+                and not (rel.startswith(SYMBOL_TABLES) and path.suffix == ".toml")):
             errors.append(f"{rel}: {path.stat().st_size} bytes, larger than any source file should be (a dump?)")
         if path.suffix == ".toml":
             try:
