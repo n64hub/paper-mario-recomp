@@ -1,7 +1,8 @@
 // Evaluated in the page by N64Recomp-browser's tools/record_shaders.mjs (tools/shader_plan.json) and play_page.mjs
-// (tools/play_plan.json, tools/play_plan_extended.json): takes the game where a plan needs it as the game's own code
-// does, by writing what that code writes into RDRAM, with no patch. The addresses are the USA ROM's
-// (syms/papermario.us.datasyms.toml), the fields the decomp's (include/common_structs.h, src/game_modes.h). It offers
+// (tools/play_plan.json, tools/play_plan_extended.json, tools/play_plan_maps.json): takes the game where a plan
+// needs it as the game's own code does, by writing what that code writes into RDRAM, with no patch. The addresses
+// are the USA ROM's (syms/papermario.us.datasyms.toml), the fields the decomp's (include/common_structs.h,
+// src/game_modes.h). It offers
 //
 //   mode()                     the game mode playing (CurGameMode: 2 the title, 4 the world, 5 a map change, 8 a
 //                              battle, 10 the pause menu, 14 file select, 16 the intro story, 17 the attract demo)
@@ -30,6 +31,12 @@
 //                              that lets no enemy touch Mario (gGameStatus.debugEnemyContact, DEBUG_CONTACT_CANT_TOUCH;
 //                              loading a file clears it), so that a plan's walk never starts a battle nothing would end
 //   battleOver(ms)             resolves true once no battle is playing (game mode neither 8 nor 9)
+//   sweep(prefix, story)       warp()s to each map of an area ("kmr", its gAreas name without "area_") in turn at
+//                              entrance 0 and that story, a few seconds each, and logs a line a map ("sweep: kmr_00
+//                              ok ...") and one for the area (tools/play_plan_maps.json). Before each it clears what
+//                              the map's exits would have: a cutscene's curtain callback (gCurtainDrawCallback, in the
+//                              map's code, which the next map replaces) and its ambient sound (ClearAmbientSounds).
+//                              Koopa Village's radio is stopped by its own exits only, so a sweep visits nok last
 //
 // A warp asked for while a map change, a battle or a cutscene's own map change is under way waits for the world.
 (() => {
@@ -76,7 +83,13 @@
     }
     return null;
   };
-  window.mode = () => (r16(CUR_GAME_MODE) << 16) >> 16;
+  const findArea = (prefix) => {
+    for (let area = 0; n64r(AREAS + area * 0x10) !== 0; area++) {
+      if (str(n64r(AREAS + area * 0x10 + 8)) === 'area_' + prefix) return area;
+    }
+    return null;
+  };
+  window.mode =() => (r16(CUR_GAME_MODE) << 16) >> 16;
   window.map = () => {
     if (window.mode() !== 4) return '';
     const area = r16(AREA_ID), map = r16(MAP_ID);
@@ -126,4 +139,34 @@
     return until(() => window.map() === name, Math.max(end - Date.now(), 0));
   };
   window.battleOver = (ms) => until(() => window.mode() !== 8 && window.mode() !== 9, ms);
+  // AmbientSoundData { s16 flags, s16 fadeState, s32 fadeTime, s32 soundID, ... } (src/audio/ambience.c).
+  const CURTAIN_DRAW_CALLBACK = 0x8009BAA0, AMBIENT_SOUNDS = 0x8015C7C0;
+  window.sweep = async (prefix, story) => {
+    const area = findArea(prefix), names = [];
+    for (let map = 0; area !== null && map < n64r(AREAS + area * 0x10); map++) {
+      names.push(str(n64r(n64r(AREAS + area * 0x10 + 4) + map * 0x20)));
+    }
+    const failed = [];
+    for (const name of names) {
+      const start = Date.now();
+      n64w(CURTAIN_DRAW_CALLBACK, 0);
+      // play_ambient_sounds(AMBIENT_SILENCE, 250): fade out whatever plays (fadeState AMBIENCE_STATE_FADE_OUT).
+      if ((n64r(AMBIENT_SOUNDS + 8) | 0) !== -1) {
+        n64w(AMBIENT_SOUNDS + 4, 250);
+        n64w(AMBIENT_SOUNDS + 8, -1);
+        w16(AMBIENT_SOUNDS + 2, 1);
+      }
+      let result;
+      try { result = await window.warp(name, 0, 20000, story); } catch (e) { result = e.message; }
+      await sleep(2500);
+      console.log(`sweep: ${name} ${result === true ? 'ok' : 'FAIL ' + result} mode ${window.mode()} map ` +
+        `${window.map() || '-'} clock ${window.clock()} ${Date.now() - start}ms`);
+      if (result !== true) failed.push(name);
+      // A map that left the world (a cutscene's battle) is given 10 s to come back.
+      await until(() => window.mode() === 4, 10000);
+    }
+    console.log(`sweep: area ${prefix} ${names.length - failed.length}/${names.length} ok` +
+      (failed.length ? ` failed ${failed.join(',')}` : ''));
+    return names.length > 0;
+  };
 })()

@@ -74,6 +74,13 @@ This repo is the game: its recompilation, the patches over it, the desktop build
 - **Threads** (`main.cpp` names them): 0 the PI manager or the VI manager (by priority), 1 idle, 2 the crash screen's,
   3 the game's main at priority 10 or else audio, 4 NuSystem's graphics thread, where the game runs on each retrace, 5
   its task manager, 6 the controllers, 17-19 the audio's scheduler threads.
+- **Stalls.** gfxRetrace_Callback steps the game on each retrace before it checks how many graphics tasks are pending,
+  which holds back only its drawing, and its lists are in two buffers. So when RT64 stalls in one list, the game runs
+  on and rewrites what RT64 is still reading: a page trapped or stopped drawing, and on Mesa's software Vulkan the
+  desktop build read a list of 0xFF words without end. `ULTRAMODERN_VIS_WAIT_FOR_RENDERER` sends no VI while RT64 is
+  stalled, on the page and here on the desktop too (`CMakeLists.txt`).
+- **The ending.** The parade (end_00) loads its sprites into a sprite heap with room only for no partner out, as the
+  game's own ending leaves it (hos_10 clears the partner). A warp there with a partner traps in decode_yay0.
 - **Input.** RecompFrontend's default bindings. Keyboard: WASD the stick, Space A, Left Shift B, Q Z, R R, E L, Enter
   Start, the arrows the C buttons. The game reads port 1 only.
 - **Widescreen** (`patches/widescreen.c`, its header says how). RecompFrontend's Graphics tab defaults to Aspect Ratio
