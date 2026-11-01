@@ -768,3 +768,217 @@ RECOMP_PATCH void gfx_draw_background(void) {
     }
     gDPPipeSync(gMainGfxPos++);
 }
+
+// The darkness around Mario in a dark room or battle (OVERLAY_WORLD_DARKNESS, OVERLAY_BATTLE_DARKNESS): the game draws
+// a 64x64 stencil of two turning circles into the depth buffer, copies it to an I8 texture there and draws that over
+// the camera's view, black where the stencil is. RT64 widens every framebuffer by the picture's shape, the stencil's
+// too, and draws its square viewport at the game's size in the middle of it, so in a picture wider than 4:3 the
+// texture the game read back held the circles squeezed into its middle and whatever was beside them: the room lit at
+// both sides. So there the stencil is made on the CPU as the RDP draws it (darkness_stencil_cpu), into a texture of
+// its own, and the black reaches the window's sides when the camera opens (darkness_rect_wide). At 4:3 it is the
+// game's own.
+extern u8 ui_stencil_blurry_circle_png[];
+extern Vp DarknessStencilViewport;
+extern Gfx Gfx_DarknessStencilQuad[];
+
+// Two, so that the frame being built never writes the one the frame before reads.
+static u8 sDarknessStencil[2][64 * 64] __attribute__((aligned(8)));
+static s32 sDarknessStencilIndex;
+
+// The stencil: white, then each circle (the blurry circle texture's 64 texels mirrored to 128 across a quad 32 units
+// wide, dark in its middle, turned by i * 70 degrees and scaled by its pulse) blended over it in black by one less its
+// texel (PM_CC_56's alpha), so that what is left is its texel, under the game's projection, whose origin is the
+// stencil's bottom right corner and which shows 16 units each way. Point sampled, as the game sets.
+static u8* darkness_stencil_cpu(void) {
+    u8* out = sDarknessStencil[sDarknessStencilIndex];
+    f32 scale[2], c[2], s[2];
+    s32 i, x, y;
+
+    sDarknessStencilIndex ^= 1;
+    for (i = 0; i < 2; i++) {
+        if (i == 0) {
+            scale[i] = 0.9 - sin_deg(gGameStatusPtr->frameCounter) * 0.05;
+        } else {
+            scale[i] = 0.9 - sin_deg(gGameStatusPtr->frameCounter * 2 + i * 40) * 0.07;
+        }
+        c[i] = cos_deg(i * 70);
+        s[i] = sin_deg(i * 70);
+    }
+    for (y = 0; y < 64; y++) {
+        f32 wy = 16.0f - (y + 0.5f) * 0.25f;
+        for (x = 0; x < 64; x++) {
+            f32 wx = (x + 0.5f) * 0.25f - 16.0f;
+            f32 value = 1.0f;
+            for (i = 0; i < 2; i++) {
+                f32 ox = (wx * c[i] + wy * s[i]) / scale[i];
+                f32 oy = (wy * c[i] - wx * s[i]) / scale[i];
+                s32 si, ti;
+                if (ox < -16.0f || ox >= 16.0f || oy < -16.0f || oy >= 16.0f) {
+                    continue;
+                }
+                si = (s32)((ox + 16.0f) * 4.0f);
+                ti = (s32)((oy + 16.0f) * 4.0f);
+                si = si >= 64 ? 127 - si : si;
+                ti = ti >= 64 ? 127 - ti : ti;
+                value *= ui_stencil_blurry_circle_png[ti * 64 + si] / 255.0f;
+            }
+            out[y * 64 + x] = (u8)(value * 255.0f + 0.5f);
+        }
+    }
+    return out;
+}
+
+// The black from the window's left edge to its right, in up to three rectangles placed from its centre: where the
+// texture's s (S10.5, s0 at the view's left side, 32 / texScale more a pixel) is below 0 or past its last texel (63.5,
+// which the load's shift doubles to 127) it clamps, so those two repeat their edge's texel and the one between steps
+// through the texture as the game's does. Each one's s fits its 16 bits however far the window reaches.
+static void darkness_rect_wide(Camera* camera, f32 s0, s32 t0, f32 texScale) {
+    f32 perPixel = 32.0f / texScale;
+    s32 step = 1024.0f / texScale;
+    s32 leftQ = -(SCREEN_WIDTH / 2 + widescreen_margin()) * 4, rightQ = -leftQ;
+    s32 uly = camera->viewportStartY * 4, lry = (camera->viewportStartY + camera->viewportH) * 4;
+    f32 leftX = camera->viewportStartX - SCREEN_WIDTH / 2;
+    f32 lastS = 63.5f * 32.0f;
+    s32 aQ = (leftX + (0.0f - s0) / perPixel) * 4.0f;
+    s32 bQ = (leftX + (lastS - s0) / perPixel) * 4.0f;
+
+    aQ = aQ < leftQ ? leftQ : aQ > rightQ ? rightQ : aQ;
+    bQ = bQ < aQ ? aQ : bQ > rightQ ? rightQ : bQ;
+    gEXSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, -WIDE_REACH, 0, WIDE_REACH,
+                  SCREEN_HEIGHT);
+    if (aQ > leftQ) {
+        gEXTextureRectangle(gMainGfxPos++, G_EX_ORIGIN_CENTER, G_EX_ORIGIN_CENTER, leftQ, uly, aQ, lry,
+                            G_TX_RENDERTILE, 0, t0, 0, step);
+    }
+    if (bQ > aQ) {
+        s32 s = s0 + (aQ / 4.0f - leftX) * perPixel;
+        gEXTextureRectangle(gMainGfxPos++, G_EX_ORIGIN_CENTER, G_EX_ORIGIN_CENTER, aQ, uly, bQ, lry, G_TX_RENDERTILE,
+                            s, t0, step, step);
+    }
+    if (rightQ > bQ) {
+        gEXTextureRectangle(gMainGfxPos++, G_EX_ORIGIN_CENTER, G_EX_ORIGIN_CENTER, bQ, uly, rightQ, lry,
+                            G_TX_RENDERTILE, (s32)lastS, t0, 0, step);
+    }
+    gDPSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+}
+
+// The decomp's appendGfx_darkness_stencil (src/screen_render_util.c), with the stencil and the black above in a
+// picture wider than 4:3.
+RECOMP_PATCH void appendGfx_darkness_stencil(s32 isWorld, s32 posX, s32 posY, f32 alpha, f32 progress) {
+    Camera* camera = &gCameras[gCurrentCameraID];
+    f32 texScale, s0, t0;
+    s32 i;
+
+    if (alpha == 0.0f) {
+        return;
+    }
+
+    if (!isWorld) {
+        texScale = (255.0f - alpha) * 10.0f / 255.0f + 0.14;
+    } else {
+        texScale = 0.5f;
+        texScale = (255.0f - alpha) * 9.5f / 255.0f + texScale;
+        posX += (camera->viewportW / 2 - posX) * (255.0f - alpha) / 255.0f;
+        posY += (camera->viewportH / 2 - posY) * (255.0f - alpha) / 255.0f;
+    }
+
+    if (widescreen_margin() > 0) {
+        gDPPipeSync(gMainGfxPos++);
+        gDPLoadTextureTile(gMainGfxPos++, osVirtualToPhysical(darkness_stencil_cpu()), G_IM_FMT_I, G_IM_SIZ_8b, 64, 64,
+                           0, 0, 63, 63, 0, G_TX_MIRROR | G_TX_CLAMP, G_TX_MIRROR | G_TX_CLAMP, 6, 6, 15, 15);
+        gDPSetTileSize(gMainGfxPos++, G_TX_RENDERTILE, 0, 0, 0x01FC, 0x01FC);
+        gDPPipeSync(gMainGfxPos++);
+    } else {
+        guOrtho(&gDisplayContext->matrixStack[gMatrixListPos], -16.0f, 0.0f, 0.0f, 16.0f, -1000.0f, 1000.0f, 1.0f);
+        gSPMatrix(gMainGfxPos++, &gDisplayContext->matrixStack[gMatrixListPos++], G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
+        gDPSetAlphaDither(gMainGfxPos++, G_AD_PATTERN);
+        gDPSetTextureFilter(gMainGfxPos++, G_TF_POINT);
+        gDPSetTexturePersp(gMainGfxPos++, G_TP_PERSP);
+        gDPSetColorImage(gMainGfxPos++, G_IM_FMT_RGBA, G_IM_SIZ_32b, 64, osVirtualToPhysical(nuGfxZBuffer));
+        gDPSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, 0, 0, 64, 64);
+        gSPViewport(gMainGfxPos++, &DarknessStencilViewport);
+        gDPSetCombineMode(gMainGfxPos++, PM_CC_CONST_1, PM_CC_CONST_1);
+        guRotate(&gDisplayContext->matrixStack[gMatrixListPos], 0.0f, 0.0f, 0.0f, 1.0f);
+        gSPMatrix(gMainGfxPos++, &gDisplayContext->matrixStack[gMatrixListPos++], G_MTX_PUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gSPDisplayList(gMainGfxPos++, Gfx_DarknessStencilQuad);
+        gSPPopMatrix(gMainGfxPos++, G_MTX_MODELVIEW);
+        gDPPipeSync(gMainGfxPos++);
+        gDPSetCombineMode(gMainGfxPos++, PM_CC_56, PM_CC_56);
+
+        for (i = 0; i < 2; i++) {
+            f32 f20;
+
+            if (i == 0) {
+                f20 = 0.9 - sin_deg(gGameStatusPtr->frameCounter) * 0.05;
+            } else {
+                f20 = 0.9 - sin_deg(gGameStatusPtr->frameCounter * 2 + i * 40) * 0.07;
+            }
+
+            gDPSetPrimColor(gMainGfxPos++, 0, 0, 255, 255, 255, 255);
+            guRotate(&gDisplayContext->matrixStack[gMatrixListPos], i * 70, 0.0f, 0.0f, 1.0f);
+            gSPMatrix(gMainGfxPos++, &gDisplayContext->matrixStack[gMatrixListPos++], G_MTX_PUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+            guScale(&gDisplayContext->matrixStack[gMatrixListPos], f20, f20, 1.0f);
+            gSPMatrix(gMainGfxPos++, &gDisplayContext->matrixStack[gMatrixListPos++], G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
+            gSPDisplayList(gMainGfxPos++, Gfx_DarknessStencilQuad);
+            gSPPopMatrix(gMainGfxPos++, G_MTX_MODELVIEW);
+        }
+
+        gDPPipeSync(gMainGfxPos++);
+        gDPSetTexturePersp(gMainGfxPos++, G_TP_NONE);
+        gDPSetColorImage(gMainGfxPos++, G_IM_FMT_I, G_IM_SIZ_8b, 64, osVirtualToPhysical(nuGfxZBuffer));
+        gDPSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, 0, 0, 64, 64);
+        gDPSetCombineMode(gMainGfxPos++, PM_CC_0F, PM_CC_0F);
+
+        for (i = 0; i < 4; i++) {
+            gDPLoadTextureTile(gMainGfxPos++, osVirtualToPhysical(&nuGfxZBuffer[i * 2048]), G_IM_FMT_RGBA, G_IM_SIZ_32b, 64, 16, 0, 0, 63, 15, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
+            gDPPipeSync(gMainGfxPos++);
+            gSPTextureRectangle(gMainGfxPos++, 0, (i * 16) * 4, 64 * 4, (i * 16 + 16) * 4, G_TX_RENDERTILE, 0, 0, 0x400, 0x400);
+            gDPPipeSync(gMainGfxPos++);
+        }
+
+        gDPLoadTextureTile(gMainGfxPos++, osVirtualToPhysical(nuGfxZBuffer), G_IM_FMT_I, G_IM_SIZ_8b, 64, 64, 0, 0, 63, 63,
+                           0, G_TX_MIRROR | G_TX_CLAMP, G_TX_MIRROR | G_TX_CLAMP, 6, 6, 15, 15);
+        gDPSetTileSize(gMainGfxPos++, G_TX_RENDERTILE, 0, 0, 0x01FC, 0x01FC);
+        gDPPipeSync(gMainGfxPos++);
+
+        gDPSetCycleType(gMainGfxPos++, G_CYC_FILL);
+        gDPSetRenderMode(gMainGfxPos++, G_RM_NOOP, G_RM_NOOP2);
+        gDPSetColorImage(gMainGfxPos++, G_IM_FMT_RGBA, G_IM_SIZ_32b, 64, osVirtualToPhysical(nuGfxZBuffer));
+        gDPSetFillColor(gMainGfxPos++, GPACK_ZDZ(G_MAXFBZ, 0)<<16 | GPACK_ZDZ(G_MAXFBZ, 0));
+        gDPFillRectangle(gMainGfxPos++, 0, 0, 63, 63);
+        gDPPipeSync(gMainGfxPos++);
+    }
+
+    gDPSetColorImage(gMainGfxPos++, G_IM_FMT_RGBA, G_IM_SIZ_16b, SCREEN_WIDTH, osVirtualToPhysical(nuGfxCfb_ptr));
+    gDPSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    gDPSetCycleType(gMainGfxPos++, G_CYC_1CYCLE);
+    gDPSetColorDither(gMainGfxPos++, G_CD_MAGICSQ);
+    gDPSetAlphaDither(gMainGfxPos++, G_AD_PATTERN);
+    gDPSetTextureFilter(gMainGfxPos++, G_TF_AVERAGE);
+    gDPSetRenderMode(gMainGfxPos++, G_RM_CLD_SURF, G_RM_CLD_SURF2);
+
+    if (alpha != 255.0f || isWorld == 1) {
+        gDPSetCombineMode(gMainGfxPos++, PM_CC_57, PM_CC_57);
+    } else {
+        gDPSetCombineMode(gMainGfxPos++, PM_CC_58, PM_CC_58);
+    }
+    alpha *= 0.5f;
+    gDPSetPrimColor(gMainGfxPos++, 0, 0, 0, 0, 0, alpha * 0.5f * progress / 255.0f);
+    gDPSetEnvColor(gMainGfxPos++, 255, 255, 255, (255.0f - alpha * 0.5f) * progress / 255.0f);
+
+    if (!isWorld) {
+        s0 = (12 - posX) * 32.0f / texScale + 16.0f + 1024.0f;
+        t0 = (19 - posY) * 32.0f / texScale + 16.0f + 1024.0f;
+    } else {
+        s0 = (9 - posX) * 32.0f / texScale + 1024.0f;
+        t0 = (32 - posY) * 32.0f / texScale + 1024.0f;
+    }
+    if (widescreen_camera_opens(camera)) {
+        darkness_rect_wide(camera, s0, t0, texScale);
+    } else {
+        gSPTextureRectangle(gMainGfxPos++,
+                            camera->viewportStartX * 4, camera->viewportStartY * 4,
+                            (camera->viewportStartX + camera->viewportW) * 4, (camera->viewportStartY + camera->viewportH) * 4,
+                            G_TX_RENDERTILE, s0, t0, 1024.0f / texScale, 1024.0f / texScale);
+    }
+}
