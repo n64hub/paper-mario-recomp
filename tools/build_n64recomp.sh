@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds the recompilers the runtime pins (lib/N64ModernRuntime/N64Recomp: N64Recomp and RSPRecomp) into
-# build/n64recomp, configuring it the first time; arguments go to that configure. tools/recompile.sh runs it
-# first, and a build that is up to date costs nothing.
+# build/n64recomp, configuring it the first time (and again for another cmake); arguments go to that configure.
+# tools/recompile.sh runs it first, and a build that is up to date costs nothing.
 #
 # It patches lib/ first, with N64Recomp-browser's patches and then the game's own (runtime-patches/apply.cmake, which
 # does nothing once they are in): the code the patched N64Recomp writes uses the patched recomp.h (RECOMP_TAIL_CALL),
@@ -13,6 +13,13 @@ cd "$(dirname "$0")/.."
 bin=build/n64recomp
 mkdir -p build
 cmake -P runtime-patches/apply.cmake
+# A build configured by another cmake (the web image's, then tools/release.sh's Linux image in the same checkout) can't
+# regenerate itself here, so it is configured again.
+echo 'message("${CMAKE_COMMAND}")' > build/cmake-command.cmake
+if [[ -f "$bin/CMakeCache.txt" ]] &&
+    ! grep -qxF "CMAKE_COMMAND:INTERNAL=$(cmake -P build/cmake-command.cmake 2>&1)" "$bin/CMakeCache.txt"; then
+    rm -rf "$bin"
+fi
 if [[ ! -f "$bin/build.ninja" ]]; then
     cmake -S lib/N64ModernRuntime/N64Recomp -B "$bin" -G Ninja -DCMAKE_BUILD_TYPE=Release "$@" > "$bin.log" 2>&1 ||
         { tail -20 "$bin.log"; exit 1; }
