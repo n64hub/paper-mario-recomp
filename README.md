@@ -14,7 +14,7 @@ emulator.
 The repo holds no ROM, no asset from the game and no data extracted from it: you supply your own ROM, and nothing in
 git or CI is made from one except the symbol names and addresses in `syms/`.
 
-**Status:** a prerelease, for Windows and Linux (`releases/`). The desktop build boots through the logos and the intro
+**Status:** released for Windows and Linux (`releases/`). The desktop build boots through the logos and the intro
 story to the title, plays the attract demo with its battles, and plays a new game from file select into the world,
 with sound (the audio microcode recompiled), Flash saves, and keyboard and gamepad input. Every map of every area
 plays (`tools/play_plan_maps.json` warps to each on the web page), and so does the ending's parade; the game hasn't
