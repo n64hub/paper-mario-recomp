@@ -22,7 +22,8 @@ been played through from start to end yet. The Linux build has been booted on Me
 window wider than 4:3 the world and battles reach the window's edges, their backgrounds with them, and the menus and
 the HUD stay in the middle 4:3 (Graphics: Aspect Ratio Expand by default, Original for the console's 4:3). RT64
 draws at the window's resolution, with MSAA, and interpolates to the display's rate. The same game builds into a web
-page that plays in Chrome and Firefox through WebGPU (`docs/web.md`).
+page that plays in Chrome and Firefox through WebGPU, at [n64hub.com/paper-mario](https://n64hub.com/paper-mario/)
+(`docs/web.md`).
 
 ## The ROM
 
