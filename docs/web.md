@@ -10,7 +10,8 @@ What is the game's own stays here: the `EMSCRIPTEN` branches of `CMakeLists.txt`
 list's header says how to record it again), the play plans (`tools/play_plan.json`, `tools/play_plan_extended.json`)
 and the survey they share (`tools/shader_survey.js`). The rest is N64Recomp-browser's: `docs/porting.md` (WebGPU and
 the shaders, prebuilt shader lists, Emscripten), `docs/playing.md` (playing and measuring a page), `docs/forks.md` and
-`docs/findings.md`.
+`docs/findings.md`. Every play of this game's page is a line in N64Recomp-browser's `plays.jsonl` (game `pm`), never a
+record here. The page is published at [n64hub.com/paper-mario](https://n64hub.com/paper-mario/).
 
 ## Build it
 
