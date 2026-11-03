@@ -34,9 +34,10 @@ This repo is the game: its recompilation, the patches over it, the desktop build
 
 ## Rules
 
-- No ROMs, ROM-derived assets or extracted game data in git, CI or PRs (`tools/ci/check_repo.py` checks). Nothing
-  from the decomp's assets or its build is committed but `syms/`. The launcher's art is text only (`icons/`): no logo,
-  character or picture from the game.
+- No ROMs, ROM-derived assets or extracted game data in git, CI or PRs (`tools/ci/check_repo.py` checks). Nothing from
+  the decomp's assets or its build is committed but `syms/`. The icon (`icons/icon.svg`, the launcher's thumbnail and
+  the program's icon by `tools/icon.py`) is drawn for the project from plain shapes: no logo, character or picture from
+  the game.
 - The desktop releases are built where the ROM is, by `tools/release.sh` (its header says how), and published to
   GitHub Releases with their notes in `releases/`.
 - The scope is the game as it plays, plus what a web page needs (RT64 interpolation to the display's rate, resolution
