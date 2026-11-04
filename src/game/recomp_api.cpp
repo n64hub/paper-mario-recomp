@@ -27,9 +27,12 @@
 // gEffectGlobals at 0xE0200000). N64Recomp's memory macros index RDRAM by address - 0x80000000, so the recompiled
 // effects read and write RDRAM + 0x60000000 and up, and the TLB calls are left out (us.toml's ignored functions). Each
 // effect has its own address, and only effects use those pages, so backing the whole stretch with memory of its own is
-// the TLB's mapping without the aliasing. Natively that is inside the runtime's 4 GB reservation; on a page RDRAM is an
-// allocation in the wasm heap, so the heap's break is moved past it, as Conker's page does, and the page's memory grows
-// to about 1.6 GB of address space, most of it never touched.
+// the TLB's mapping without the aliasing. Natively that is inside the runtime's 4 GB reservation, of which the runtime
+// makes only the console's 512 MB usable, so the stretch is made usable here: on Windows committed (VirtualAlloc), as
+// the runtime reserves the rest without committing it and VirtualProtect fails on such pages; on Linux mprotect, as
+// the rest is mapped without access. On a page RDRAM is an allocation in the wasm heap, so the heap's break is moved
+// past it, as Conker's page does, and the page's memory grows to about 1.6 GB of address space, most of it never
+// touched.
 static constexpr uint32_t effects_vram = 0xE0000000;
 static constexpr uint32_t effects_end = 0xE0210000;
 
@@ -50,8 +53,7 @@ void pm::map_tlb_pages(uint8_t* rdram) {
         }
     }
 #elif defined(_WIN32)
-    DWORD old_protect;
-    ok = VirtualProtect(begin, end - begin, PAGE_READWRITE, &old_protect) != 0;
+    ok = VirtualAlloc(begin, end - begin, MEM_COMMIT, PAGE_READWRITE) != nullptr;
 #else
     ok = mprotect(begin, end - begin, PROT_READ | PROT_WRITE) == 0;
 #endif
