@@ -39,7 +39,7 @@ with a MIPS backend plus ld.lld for `patches/`. On Linux: `clang lld libsdl2-dev
 From the repo's root in a bash shell:
 
 ```sh
-git submodule update --init --recursive
+git -c core.longpaths=true submodule update --init --recursive   # paths past Windows' 260 characters
 bash tools/recompile.sh -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl   # the game's code as C
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl \
