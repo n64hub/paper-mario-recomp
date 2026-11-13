@@ -78,6 +78,11 @@ set(RT64_SDL_WINDOW_VULKAN TRUE)
 # here on the desktop too: gfxRetrace_Callback steps the game whatever its lists do, so a long stall let it run on and
 # rewrite the list RT64 was still reading, and on Mesa's software Vulkan the picture stopped for good after 90 s.
 set(ULTRAMODERN_VIS_WAIT_FOR_RENDERER ON)
+# The game draws a frame in two RSP tasks, gfx_task_background (which swaps nothing) and then gfx_draw_frame, which RT64
+# interpolates as one game frame with RT64_GAME_FRAME_WORKLOADS, on with Emscripten and here on the desktop too: each
+# task interpolated as a frame of its own drew frames between the game's from the background and half the world, and
+# the opening's "Mail call!" at Mario's house flickered to his house's inside without its outer wall, roof and trees.
+set(RT64_GAME_FRAME_WORKLOADS ON)
 add_compile_definitions(HLSL_CPU)
 
 if (WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
