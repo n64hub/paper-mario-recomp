@@ -83,15 +83,18 @@ This repo is the game: its recompilation, the patches over it, the desktop build
 - **The ending.** The parade (end_00) loads its sprites into a sprite heap with room only for no partner out, as the
   game's own ending leaves it (hos_10 clears the partner). A warp there with a partner traps in decode_yay0.
 - **Input.** RecompFrontend's default bindings. Keyboard: WASD the stick, Space A, Left Shift B, Q Z, R R, E L, Enter
-  Start, the arrows the C buttons. The game reads port 1 only.
+  Start, the arrows the C buttons. The game reads port 1 only: it is a game of one player, so every pad and the
+  keyboard play port 1 (`set_single_player_mode`), and N64Recomp-browser's checklist item 3 (every controller its own
+  port) doesn't apply.
 - **Widescreen** (`patches/widescreen.c`, its header says how). RecompFrontend's Graphics tab defaults to Aspect Ratio
   Expand, HUD Placement 16:9, Resolution Auto and Framerate Display. RT64 widens the 3D, but the game keeps the world
   inside its own frame, by its cameras' scissors and a background drawn only in the 4:3 picture: the patches open a
   camera whose view is the whole width to the window's sides and draw the background across, and a smaller view (the
-  intro story's, the demo's framed picture) keeps the game's frame. A dark room's light and the pause menu's blurred
-  world are widened there too. `patches/extended_gbi.c` turns on RT64's extended
-  commands at the start of each of the game's display lists, since RT64 turns them off at each. Original (Aspect
-  Ratio Original) is the console's 4:3.
+  intro story's, the demo's framed picture) keeps the game's frame. A dark room's light, the pause menu's blurred
+  world and the fades to or from a colour are widened there too. The HUD (`patches/hud.c`) is placed from the HUD Placement's sides: the status bar's
+  left box at the left, its right box at the right, the shops' coin counter at the left; the menus stay 4:3.
+  `patches/extended_gbi.c` turns on RT64's extended commands at the start of each of the game's display lists, since
+  RT64 turns them off at each. Original (Aspect Ratio Original) is the console's 4:3.
 - **Testing.** `--boot` starts the game from the launcher's first frame once the ROM is stored, `--window <w>x<h>`
   sizes the window, and `--input <file>` plays port 1 from a script of timed button states (`main.cpp` says the
   format), for unattended runs.

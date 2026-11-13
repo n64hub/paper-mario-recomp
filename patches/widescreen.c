@@ -14,13 +14,15 @@
 // breaks; wide, the stencil is worked out on the CPU from the same texture and quads, and drawn stretched to the
 // window's sides, its edges' darkness carried on. And the pause menu's blurred picture of the world
 // (gfx_transfer_frame_to_depth) leaves the depth buffer's two outer columns as they were, which with a camera that
-// opens hold the world's depth and show as coloured columns; wide, they are set to the cleared value.
+// opens hold the world's depth and show as coloured columns; wide, they are set to the cleared value. The fades to or
+// from a colour (a map's, a cutscene's) fill the game's frame or its view, and wide fill them to the window's sides.
 
 #include "patches.h"
 #include "common.h"
 #include "camera.h"
 #include "model.h"
 #include "nu/nusys.h"
+#include "overlay.h"
 #include "rt64_extended_gbi.h"
 
 void render_models(void);
@@ -999,5 +1001,68 @@ RECOMP_PATCH void appendGfx_darkness_stencil(s32 isWorld, s32 posX, s32 posY, f3
                             camera->viewportStartX * 4, camera->viewportStartY * 4,
                             (camera->viewportStartX + camera->viewportW) * 4, (camera->viewportStartY + camera->viewportH) * 4,
                             G_TX_RENDERTILE, s0, t0, 1024.0f / texScale, 1024.0f / texScale);
+    }
+}
+
+extern s32 screen_overlay_frontType;
+extern f32 screen_overlay_frontProgress;
+extern s32 screen_overlay_backType;
+extern f32 screen_overlay_backProgress;
+extern ScreenOverlay ScreenOverlays[2];
+
+// The decomp's _render_transition_stencil (src/screen_overlays.c) for its two plain fades, the screen's colour and the
+// view's, to the window's sides in a picture wider than 4:3 (the view's only where it opens), where the game fills its
+// 4:3 frame. Returns false for the other overlays (the wipes, the stencils), which the game's own function draws.
+static s32 widescreen_overlay_color(s32 type, f32 progress, ScreenOverlay* overlay) {
+    Camera* camera = &gCameras[gCurrentCameraID];
+    s32 uly, lry;
+
+    if (progress == 0.0f) {
+        return false;
+    }
+    if (type == OVERLAY_SCREEN_COLOR && widescreen_margin() > 0) {
+        uly = 0;
+        lry = SCREEN_HEIGHT - 1;
+    } else if (type == OVERLAY_VIEWPORT_COLOR && widescreen_camera_opens(camera)) {
+        uly = camera->viewportStartY;
+        lry = camera->viewportStartY + camera->viewportH;
+    } else {
+        return false;
+    }
+
+    gDPPipeSync(gMainGfxPos++);
+    gDPSetColorDither(gMainGfxPos++, G_CD_MAGICSQ);
+    gDPSetAlphaDither(gMainGfxPos++, G_AD_PATTERN);
+    gDPSetCycleType(gMainGfxPos++, G_CYC_1CYCLE);
+    if (progress == 255.0f) {
+        gDPSetRenderMode(gMainGfxPos++, CVG_DST_SAVE | G_RM_OPA_SURF, CVG_DST_SAVE | G_RM_OPA_SURF2);
+    } else {
+        gDPSetRenderMode(gMainGfxPos++, G_RM_CLD_SURF, G_RM_CLD_SURF2);
+    }
+    gDPSetCombineMode(gMainGfxPos++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+    gDPSetPrimColor(gMainGfxPos++, 0, 0, overlay->color.r, overlay->color.g, overlay->color.b, progress);
+    gEXSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, -WIDE_REACH, 0, WIDE_REACH,
+                  SCREEN_HEIGHT);
+    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, -WIDE_REACH, uly, WIDE_REACH, lry);
+    gDPSetScissor(gMainGfxPos++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    gDPSetColorDither(gMainGfxPos++, G_CD_DISABLE);
+    return true;
+}
+
+// The decomp's render_screen_overlay_frontUI and render_screen_overlay_backUI (src/screen_overlays.c), with the fades
+// above.
+RECOMP_PATCH void render_screen_overlay_frontUI(void) {
+    if (screen_overlay_frontType != OVERLAY_NONE && screen_overlay_frontProgress != -1.0f &&
+        gGameStatusPtr->context != CONTEXT_PAUSE &&
+        !widescreen_overlay_color(screen_overlay_frontType, screen_overlay_frontProgress, &ScreenOverlays[0])) {
+        _render_transition_stencil(screen_overlay_frontType, screen_overlay_frontProgress, &ScreenOverlays[0]);
+    }
+}
+
+RECOMP_PATCH void render_screen_overlay_backUI(void) {
+    if (screen_overlay_backType != OVERLAY_NONE && screen_overlay_backProgress != -1.0f &&
+        gGameStatusPtr->context != CONTEXT_PAUSE &&
+        !widescreen_overlay_color(screen_overlay_backType, screen_overlay_backProgress, &ScreenOverlays[1])) {
+        _render_transition_stencil(screen_overlay_backType, screen_overlay_backProgress, &ScreenOverlays[1]);
     }
 }
