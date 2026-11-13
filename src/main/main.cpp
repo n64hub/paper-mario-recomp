@@ -596,8 +596,16 @@ int main(int argc, char** argv) {
     // Skip Buffering, not Present Early: the game draws each frame in two RSP tasks, the background (its clears and a
     // fill over the whole framebuffer) and then the world, and Present Early shows a framebuffer as soon as a task fills
     // it, so the background alone came on screen between the world's frames.
+    //
+    // Render to RAM, RT64's exact copy of each list's frame into RDRAM (its default, on the page too, where each list
+    // waits 5-6 ms for the browser's readback): the game's CPU reads a frame it has just drawn. Pausing, the background
+    // list writes the frame's coverage into nuGfxCfb[1], and the next frame's background, before its list starts,
+    // makes the pause menu's picture of the world on the CPU from that and the frame in nuGfxCfb[0]
+    // (gfx_transfer_frame_to_depth, gfx_draw_background). A copy a list late lands at a list's start or a VI, so it
+    // would give that a frame older than the one the game drew, as it would Majora's Mask's pause background.
     ultramodern::renderer::callbacks_t renderer_callbacks{
         .create_render_context = [](uint8_t* rdram, ultramodern::renderer::WindowHandle window_handle, bool developer_mode) {
+            recompui::renderer::set_render_to_ram(true);
             return recompui::renderer::create_render_context(rdram, window_handle, ultramodern::renderer::PresentationMode::SkipBuffering, developer_mode);
         },
     };
