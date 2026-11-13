@@ -7,7 +7,8 @@
 // a colour drawn only inside that viewport, with black borders around it, and the depth cleared only over the 4:3
 // picture: beside it, the colour buffer kept whatever was drawn there last (the title's pillars, an earlier room). So a
 // camera whose view is the whole width opens to the window's sides, its background is drawn to them, and the borders
-// stay above and below. A camera with a smaller view (a picture in a corner) keeps the game's, as does a 4:3 picture.
+// stay above and below. A camera with a smaller view (a picture in a corner) keeps the game's, as does a disabled one
+// (the title's and the file menu's, whose picture is a framed painting) and a 4:3 picture.
 //
 // Two of the game's screen effects are drawn over the 4:3 picture too. A dark room's light (appendGfx_darkness_stencil)
 // is a 64x64 stencil the RDP draws into a texture, which RT64 widens and centres like any square viewport and so
@@ -73,9 +74,13 @@ static s32 widescreen_margin(void) {
 // short of a wider window's, and clips a rectangle at its framebuffer.
 #define WIDE_REACH widescreen_margin()
 
-// Whether a camera's view spans the game's whole frame, so that it opens to the window's sides.
+// Whether a camera's view spans the game's whole frame, so that it opens to the window's sides. A disabled camera
+// draws no world, and the background behind it is a picture of its own, not a panorama: the title's, behind the title
+// and the file menu, is one framed painting with a white border, which the stage's pillars and floor cover at 4:3. So
+// it keeps the game's frame, black beside it, and the stage widens over it.
 static s32 widescreen_camera_opens(Camera* camera) {
-    return widescreen_margin() > 0 && camera->viewportStartX <= FRAME_INSET_X &&
+    return widescreen_margin() > 0 && !(camera->flags & CAMERA_FLAG_DISABLED) &&
+           camera->viewportStartX <= FRAME_INSET_X &&
            camera->viewportStartX + camera->viewportW >= SCREEN_WIDTH - FRAME_INSET_X;
 }
 
@@ -747,16 +752,20 @@ RECOMP_PATCH void gfx_draw_background(void) {
 
             if (widescreen_margin() > 0) {
                 // @recomp The borders above and below to the window's sides, and beside only a view that keeps the
-                // game's frame, from the window's sides.
+                // game's frame, from the window's sides. Those two are placed from the window's centre at both ends:
+                // RT64 drops a fill whose right side, before it is moved from its origin, is left of its left side
+                // (RDP::fillRect), which one from the window's left side to a point left of its centre is.
                 if (backgroundMinY > 0) {
                     gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, -WIDE_REACH, 0, WIDE_REACH,
                                      backgroundMinY - 1);
                 }
                 if (!opens) {
-                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_CENTER, -WIDE_REACH, backgroundMinY,
+                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_CENTER, G_EX_ORIGIN_CENTER,
+                                     -SCREEN_WIDTH / 2 - WIDE_REACH, backgroundMinY,
                                      backgroundMinX - 1 - SCREEN_WIDTH / 2, backgroundMaxY - 1);
-                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_CENTER, G_EX_ORIGIN_RIGHT,
-                                     backgroundMaxX - SCREEN_WIDTH / 2, backgroundMinY, WIDE_REACH, backgroundMaxY - 1);
+                    gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_CENTER, G_EX_ORIGIN_CENTER,
+                                     backgroundMaxX - SCREEN_WIDTH / 2, backgroundMinY, SCREEN_WIDTH / 2 + WIDE_REACH,
+                                     backgroundMaxY - 1);
                 }
                 if (backgroundMaxY < SCREEN_HEIGHT) {
                     gEXFillRectangle(gMainGfxPos++, G_EX_ORIGIN_LEFT, G_EX_ORIGIN_RIGHT, -WIDE_REACH, backgroundMaxY,

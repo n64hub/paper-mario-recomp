@@ -1,0 +1,1 @@
+- In widescreen, the title screen, the file select and the name entry show their stage on black, not on copies of the title's picture with white between them.
