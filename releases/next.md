@@ -1,0 +1,1 @@
+- With interpolation on (Framerate Display), the opening's "Mail call!" scene at Mario's house no longer flickers to the house's inside without its outer wall, roof and trees: the frames drawn between the game's now hold the whole picture.
