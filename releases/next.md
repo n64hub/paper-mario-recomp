@@ -1,2 +1,0 @@
-- In widescreen, the HUD sits at the picture's sides: HP, FP and Star Power at the left, Star Points and coins at the right, and the shops' coin counter at the left. The menus stay in the middle.
-- In widescreen, the fades to and from black or white (a map's, a cutscene's) cover the whole window, not only the middle.
