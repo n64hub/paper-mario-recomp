@@ -253,10 +253,13 @@ void queue_samples(int16_t* audio_data, size_t sample_count) {
     queue_audio(samples_to_queue, num_bytes_to_queue);
 }
 
-// What osAiGetLength reads: the frames queued, less a retrace's worth, so that the game makes enough to cover a late
-// one.
+// What osAiGetLength reads: the frames queued, less two retraces' worth, so that the game makes enough to cover a late
+// one. The game's sound library keeps what osAiGetLength reads in a band of about a retrace, making a short frame
+// above it, and with one retrace left out the queue held 13-30 ms on the sound device: any 30 ms or more between two
+// buffers (a busy PC) ran it dry, a gap in the middle of the sound. Two keep 30-47 ms (N64Recomp-browser's
+// docs/new-recomp.md, item 6c).
 size_t get_frames_remaining() {
-    constexpr float buffer_offset_frames = 1.0f;
+    constexpr float buffer_offset_frames = 2.0f;
     uint64_t buffered_byte_count = get_queued_audio_bytes();
     buffered_byte_count = buffered_byte_count * 2 * sample_rate / output_sample_rate / output_channels;
     uint32_t frames_per_vi = (sample_rate / 60);
