@@ -62,7 +62,7 @@
 #include "window_icon_bmp.h"
 #endif
 
-const std::string version_string = "0.1.13";
+const std::string version_string = "0.1.14";
 
 template<typename... Ts>
 void exit_error(const char* str, Ts ...args) {

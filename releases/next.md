@@ -1,1 +1,0 @@
-- The sound no longer breaks up for a moment when the PC is busy: the game keeps a little more sound ready ahead of the speakers.
