@@ -1,0 +1,65 @@
+# The desktop build's soak plan (frame_dump.mjs --soak 170, the boot included; checklist item 8d): one round through each of
+# the game's modes and scenes, for a crash or a hang a short boot misses. The boot with Start (Enter) to the title,
+# whose hold the plan ends at once into the attract demo (Pleasant Path, a battle, Dry Dry Ruins), as the title's
+# timer running out does; Start ends the demo at the title, Start again to file select, and A (Space) on the first
+# file, its name and its confirmation to a new game's opening. From there the plan warps to Toad Town (mac_00) as
+# tools/shader_survey.js's warp() does, at the story's start of chapter 1 with Goombario and no enemy able to touch
+# Mario, walks it with random stick input (WASD), opens the pause menu and moves through it, closes it, warps to
+# Koopa Village (nok_01) and walks there with random input until the soak's end. Each step waits on the game mode
+# (CurGameMode's high half, 0x800A08F0: 2 the title, 4 the world, 5 a map change, 10 the pause menu, 14 file select,
+# 16 and 17 the intro and the demo), so a round keeps step on a slow host. The addresses are the USA ROM's
+# (tools/shader_survey.js names each); a warp writes whole words, their other halves as the game holds them there.
+1 until 0x800A08F0 0xFFFF0000 0x00020000 90 Enter
+# The title's hold (gGameStatus.startupState 2), then PlayIntroNext 0 and TitleScreen_TimeLeft 1: the demo next.
+2 until 0x800740D0 0xFF000000 0x02000000 20
+2 poke 0x80077A34 0
+2 poke 0x800A0988 0x00010000
+2 until 0x800A08F0 0xFFFE0000 0x00100000 20
+4 shot demo_start
+34 shot demo
+35 until 0x800A08F0 0xFFFF0000 0x00020000 30 Enter
+37 until 0x800A08F0 0xFFFF0000 0x000E0000 30 Enter
+38 shot file_select
+39 until 0x800A08F0 0xFFFF0000 0x00040000 60 Space
+# Toad Town at story -99 (GB_StoryProgress, the save's), Goombario as the partner, debugEnemyContact on, then the
+# map change: area 1, map 1, entrance 0, the standard fade, game mode slot 0 set to the map change's step.
+41 poke 0x800DBD70 0x9DFF0000
+41 poke 0x8010F2AC 0x01000000
+41 poke 0x8010F2A0 0x00000126
+41 or 0x80074098 0x01000000
+41 poke 0x800740A8 0x00000001
+41 poke 0x800740B0 0x00010000
+41 poke 0x800740AC 0x00010001
+41 poke 0x8014C6F0 0
+41 poke 0x800A0940 0x00000014
+41 poke 0x800A0944 0
+41 poke 0x80151710 0x800363FC
+41 poke 0x80151700 0x00030000
+41 poke 0x800A08F0 0x00050000
+41 poke 0x80151708 0x8003617C
+41 until 0x800A08F0 0xFFFF0000 0x00040000 30
+44 peek 0x800740A8,0x800740B0
+44 shot toad_town
+44 random W,A,S,D
+66 random off
+67 key Enter
+67 until 0x800A08F0 0xFFFF0000 0x000A0000 5
+69 shot pause
+69 random W,A,S,D
+77 random off
+78 until 0x800A08F0 0xFFFF0000 0x00040000 15 Enter
+# Koopa Village: area 6, map 0.
+81 poke 0x800740A8 0x00000006
+81 poke 0x800740B0 0x00000000
+81 poke 0x800740AC 0x00060001
+81 poke 0x8014C6F0 0
+81 poke 0x800A0940 0x00000014
+81 poke 0x800A0944 0
+81 poke 0x80151710 0x800363FC
+81 poke 0x80151700 0x00030000
+81 poke 0x800A08F0 0x00050000
+81 poke 0x80151708 0x8003617C
+81 until 0x800A08F0 0xFFFF0000 0x00040000 30
+84 peek 0x800740A8,0x800740B0
+84 shot koopa_village
+84 random W,A,S,D,Space
