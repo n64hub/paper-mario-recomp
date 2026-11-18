@@ -1,0 +1,27 @@
+# The save run of the save check (N64Recomp-browser's tools/frame_dump.mjs --saves, with tools/load_plan.txt): Start
+# (Enter) through the intro story to the title (CurGameMode, the high half of 0x800A08F0, 2) and on to the file menu
+# (14), A (Space) on the first file, which has no save, and a file named AABC typed on the name grid (A, A, right to
+# B, C: each key held 100 ms), ended with Start and Yes, which writes the new file to saves/papermario.n64.us.1.0.bin
+# (filemenu_yesno.c, FM_CONFIRM_CREATE). The name is then read in the first file's metadata (gSaveSlotMetadata,
+# 0x800779C4, its filename at +7 in the game's own characters: A 0x21, B 0x22, C 0x23, a blank 0xF7), so a key the game
+# took twice fails this run, which checks nothing, and not the load run.
+0 until 0x800A08F0 0xFFFF0000 0x00020000 120 Enter
+3 until 0x800A08F0 0xFFFF0000 0x000E0000 30 Enter
+6 shot files
+6.5 key Space 100
+9 shot grid
+9.5 key Space 100
+10.5 key Space 100
+11.5 key D 100
+12.5 key Space 100
+13.5 key D 100
+14.5 key Space 100
+15.5 shot name
+16 key Enter 100
+17.5 key Space 100
+17.9 peek 0x800A08F0,0x800779C8,0x800779CC,0x800779D0
+18 until 0x800779C8 0x000000FF 0x00000021 5
+18 until 0x800779CC 0xFFFFFFFF 0x212223F7 5
+18.5 saves changed 15
+19 shot created
+20 end

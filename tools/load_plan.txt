@@ -1,0 +1,26 @@
+# The load run of the save check (N64Recomp-browser's tools/frame_dump.mjs --saves), after tools/save_plan.txt, the
+# program started again in the same folder: on the file menu (CurGameMode 14) the game has read each file's metadata
+# off Flash (filemenu_common.c), and the first file's name is AABC (gSaveSlotMetadata's filename at 0x800779CB, A 0x21,
+# B 0x22, C 0x23, then blanks 0xF7) only if it came off the save. Nothing is written by then. Then a second file, BB,
+# made the same way in the second slot (right, A, the name, Start and Yes), is written through the check's links, its
+# name read in the second file's metadata (0x800779E3).
+0 until 0x800A08F0 0xFFFF0000 0x00020000 120 Enter
+3 until 0x800A08F0 0xFFFF0000 0x000E0000 30 Enter
+5.9 peek 0x800779C8,0x800779CC,0x800779D0,0x800779E0,0x800779E4
+6 until 0x800779C8 0x000000FF 0x00000021 10
+6 until 0x800779CC 0xFFFFFFFF 0x212223F7 5
+6.5 shot files
+7 saves same
+7.5 key D 100
+8.5 key Space 100
+11 key D 100
+12 key Space 100
+13 key Space 100
+14 shot name
+14.5 key Enter 100
+16 key Space 100
+16.5 until 0x800779E0 0x000000FF 0x00000022 5
+16.5 until 0x800779E4 0xFFFFFFFF 0x22F7F7F7 5
+17 saves changed 15
+18 shot created
+19 end
