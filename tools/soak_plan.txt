@@ -1,4 +1,4 @@
-# The desktop build's soak plan (frame_dump.mjs --soak 170, the boot included; checklist item 8d): one round through each of
+# The desktop build's soak plan (frame_dump.mjs --soak 170, the boot included): one round through each of
 # the game's modes and scenes, for a crash or a hang a short boot misses. The boot with Start (Enter) to the title,
 # whose hold the plan ends at once into the attract demo (Pleasant Path, a battle, Dry Dry Ruins), as the title's
 # timer running out does; Start ends the demo at the title, Start again to file select, and A (Space) on the first
