@@ -84,8 +84,7 @@ This repo is the game: its recompilation, the patches over it, the desktop build
   game's own ending leaves it (hos_10 clears the partner). A warp there with a partner traps in decode_yay0.
 - **Input.** RecompFrontend's default bindings. Keyboard: WASD the stick, Space A, Left Shift B, Q Z, R R, E L, Enter
   Start, the arrows the C buttons. The game reads port 1 only: it is a game of one player, so every pad and the
-  keyboard play port 1 (`set_single_player_mode`), and N64Recomp-browser's checklist item 3 (every controller its own
-  port) doesn't apply.
+  keyboard play port 1 (`set_single_player_mode`), not every controller its own port.
 - **Widescreen** (`patches/widescreen.c`, its header says how). RecompFrontend's Graphics tab defaults to Aspect Ratio
   Expand, HUD Placement 16:9, Resolution Auto and Framerate Display. RT64 widens the 3D, but the game keeps the world
   inside its own frame, by its cameras' scissors and a background drawn only in the 4:3 picture: the patches open a
