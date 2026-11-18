@@ -71,7 +71,10 @@ This repo is the game: its recompilation, the patches over it, the desktop build
   x86-64.
 - **Saves.** 1 Mbit of Flash. `main.cpp` declares `SaveType::Flashram`; the runtime keeps it in
   `saves/papermario.n64.us.1.0.bin`. The file menu reads a file with no save yet at slot -1, page -128, which a
-  console's Flash wraps to slot 7, as the runtime's does.
+  console's Flash wraps to slot 7, as the runtime's does. That a save is found again after a restart, through
+  symlinks as a synced folder shares it, is checked by `tools/save_plan.txt` (a new file named on the file menu) and
+  `tools/load_plan.txt` (its name read back in the file menu's metadata, then a second file), with N64Recomp-browser's
+  `tools/frame_dump.mjs --saves` on the Linux build (its header says how).
 - **Threads** (`main.cpp` names them): 0 the PI manager or the VI manager (by priority), 1 idle, 2 the crash screen's,
   3 the game's main at priority 10 or else audio, 4 NuSystem's graphics thread, where the game runs on each retrace, 5
   its task manager, 6 the controllers, 17-19 the audio's scheduler threads.
