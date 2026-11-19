@@ -1,0 +1,21 @@
+# The desktop build's answer plan (ops docs/new-recomp.md, 4d: a press reaches the picture at once and the view stays
+# where the stick leaves it), for frame_dump.mjs's answer steps with its stand-in pad and --no-dump, at the default
+# limits (500 ms to answer, 1000 ms to settle). Its steps are capture_window.ps1's, at seconds since the program
+# started (an until's wait moves the rest on). It reaches the file menu (CurGameMode 14, at 0x800A08F0) with Start
+# (Enter), a menu that holds still, and moves its cursor right on the stick (leftx) and on D, each moved back by an
+# untimed step, then down on the stick held 1.5 s.
+# v0.1.14 passes: the stick's move answered in 134 ms and settled in 1 ms, D's in 108 and 19 ms, the 1.5 s hold's in
+# 138 and 3 ms.
+0 until 0x800A08F0 0xFFFF0000 0x00020000 120 Enter
+3 until 0x800A08F0 0xFFFF0000 0x000E0000 30 Enter
+6 shot files
+7 answer file-right leftx 32767 0.4 500 1000
+12 pad leftx -32768
+12.4 pad leftx 0
+16 answer file-key key:D 1 0.4 500 1000
+21 key A 100
+25 answer file-down lefty 32767 1.5 500 1000
+31 pad lefty -32768
+32.5 pad lefty 0
+36 shot end
+37 end
